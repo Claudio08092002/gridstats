@@ -1,23 +1,45 @@
-<div class="driver-comparison card">
-  <h2>Driver Comparison</h2>
+<section class="wrap">
+  <div class="card">
+    <div class="controls">
+      <div class="field span-3">
+        <label for="season">Saison</label>
+        <select id="season" [(ngModel)]="season">
+          <option *ngFor="let y of seasons" [value]="y">{{ y }}</option>
+        </select>
+      </div>
 
-  <div class="form">
-    <div class="form-group">
-      <label for="driver1">Driver 1</label>
-      <select id="driver1" [(ngModel)]="driver1">
-  <option value="" disabled>Select a driver</option>
-  <option *ngFor="let d of drivers" [value]="d.id">{{ d.name }}</option>
-</select>
+      <div class="field span-4">
+        <label for="driver1">Fahrer 1</label>
+        <select id="driver1" [(ngModel)]="driver1">
+          <option *ngFor="let d of drivers" [value]="d.code">
+            {{ d.name }} ({{ d.code }})
+          </option>
+        </select>
+      </div>
+
+      <div class="field span-4">
+        <label for="driver2">Fahrer 2</label>
+        <select id="driver2" [(ngModel)]="driver2">
+          <option *ngFor="let d of drivers" [value]="d.code">
+            {{ d.name }} ({{ d.code }})
+          </option>
+        </select>
+      </div>
+
+      <div class="field span-3 actions">
+        <button (click)="onCompare()">Vergleichen</button>
+      </div>
     </div>
 
-    <div class="form-group">
-      <label for="driver2">Driver 2</label>
-      <select id="driver2" [(ngModel)]="driver2">
-  <option value="" disabled>Select a driver</option>
-  <option *ngFor="let d of drivers" [value]="d.id">{{ d.name }}</option>
-</select>
+    <div class="legend">
+      <span><span class="dot" [style.background]="color1"></span>{{ driver1Name }}</span>
+      <span><span class="dot" [style.background]="color2"></span>{{ driver2Name }}</span>
+    </div>
+
+    <div class="charts">
+      <canvas #chartCanvas></canvas>
     </div>
   </div>
 
-<button class="compare-btn" (click)="compare()">Compare</button>
-</div>
+  <footer class="footer">© {{ currentYear }} GridStats</footer>
+</section>

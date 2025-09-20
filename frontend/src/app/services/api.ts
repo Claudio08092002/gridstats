@@ -6,12 +6,4 @@ import { environment } from '../../enviroments/enviroments';
 export class ApiService {
   private http = inject(HttpClient);
   private base = environment.apiBase;
-
-  getDrivers() {
-    return this.http.get<{id:string; name:string}[]>(`${this.base}/drivers`);
-  }
-
-  getRaceResults(year: number, round: number) {
-    return this.http.get(`${this.base}/f1/race/${year}/${round}`);
-  }
 }
