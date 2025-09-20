@@ -4,24 +4,20 @@
   <div class="form">
     <div class="form-group">
       <label for="driver1">Driver 1</label>
-      <select id="driver1">
-        <option value="" disabled selected>Select a driver</option>
-        <option *ngFor="let driver of drivers" [value]="driver.id">
-          {{ driver.name }}
-        </option>
-      </select>
+      <select id="driver1" [(ngModel)]="driver1">
+  <option value="" disabled>Select a driver</option>
+  <option *ngFor="let d of drivers" [value]="d.id">{{ d.name }}</option>
+</select>
     </div>
 
     <div class="form-group">
       <label for="driver2">Driver 2</label>
-      <select id="driver2">
-        <option value="" disabled selected>Select a driver</option>
-        <option *ngFor="let driver of drivers" [value]="driver.id">
-          {{ driver.name }}
-        </option>
-      </select>
+      <select id="driver2" [(ngModel)]="driver2">
+  <option value="" disabled>Select a driver</option>
+  <option *ngFor="let d of drivers" [value]="d.id">{{ d.name }}</option>
+</select>
     </div>
   </div>
 
-  <button class="compare-btn">Compare</button>
+<button class="compare-btn" (click)="compare()">Compare</button>
 </div>

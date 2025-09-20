@@ -1,3 +1,4 @@
+// app.ts
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
@@ -6,8 +7,8 @@ import { RouterOutlet } from '@angular/router';
   standalone: true,
   imports: [RouterOutlet],
   templateUrl: './app.html',
-  styleUrls: ['./app.css']
+  styleUrls: ['./app.css'],
 })
 export class App {
-  currentYear = new Date().getFullYear();  // <<< hier berechnen
+  currentYear = new Date().getFullYear();
 }
