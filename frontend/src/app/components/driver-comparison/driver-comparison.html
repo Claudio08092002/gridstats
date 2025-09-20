@@ -1,0 +1,27 @@
+<div class="driver-comparison card">
+  <h2>Driver Comparison</h2>
+
+  <div class="form">
+    <div class="form-group">
+      <label for="driver1">Driver 1</label>
+      <select id="driver1">
+        <option value="" disabled selected>Select a driver</option>
+        <option *ngFor="let driver of drivers" [value]="driver.id">
+          {{ driver.name }}
+        </option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="driver2">Driver 2</label>
+      <select id="driver2">
+        <option value="" disabled selected>Select a driver</option>
+        <option *ngFor="let driver of drivers" [value]="driver.id">
+          {{ driver.name }}
+        </option>
+      </select>
+    </div>
+  </div>
+
+  <button class="compare-btn">Compare</button>
+</div>

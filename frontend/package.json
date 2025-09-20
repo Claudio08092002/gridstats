@@ -5,9 +5,7 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
-    "watch": "ng build --watch --configuration development",
-    "test": "ng test",
-    "serve:ssr:gridstats": "node dist/gridstats/server/server.mjs"
+    "test": "ng test"
   },
   "prettier": {
     "printWidth": 100,
