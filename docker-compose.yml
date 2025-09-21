@@ -1,0 +1,38 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: gridstats-backend
+    env_file: .env
+    environment:
+      - FASTF1_CACHE=${FASTF1_CACHE:-/data/fastf1_cache}
+      - UVICORN_HOST=0.0.0.0
+      - UVICORN_PORT=8000
+    volumes:
+      - fastf1_cache:/data/fastf1_cache
+      - season_cache:/app/app/season_cache
+    expose:
+      - "8000"
+    # optional, wenn du vom Host direkt testen willst:
+    # ports:
+    #   - "8000:8000"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        ANGULAR_PROJECT=${ANGULAR_PROJECT:-frontend}
+    container_name: gridstats-frontend
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    # NGINX_BACKEND_URL wird in der conf nicht genutzt → kann weg
+
+volumes:
+  fastf1_cache:
+  season_cache:
