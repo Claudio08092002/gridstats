@@ -75,7 +75,7 @@ jobs:
           push: true
           platforms: linux/amd64
           build-args: |
-            ANGULAR_PROJECT=frontend   # falls dein Angular-Projekt anders heißt → hier anpassen
+            ANGULAR_PROJECT=gridstats 
           tags: |
             claudio08092002/gridstats-frontend:${{ github.event.inputs.version }}
             claudio08092002/gridstats-frontend:latest
