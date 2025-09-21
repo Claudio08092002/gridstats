@@ -66,14 +66,13 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./backend/Dockerfile   # << falls du das Frontend pushen willst: ./frontend/Dockerfile
+          file: ./backend/Dockerfile
           push: true
+          platforms: linux/amd64
           tags: |
-            ${{ env.IMAGE }}:${{ env.TAG }}
-            ${{ env.IMAGE }}:latest
-          # falls du Build-Args brauchst:
-          # build-args: |
-          #   ANGULAR_PROJECT=frontend
+            claudio08092002/gridstats:${{ env.TAG }}
+            claudio08092002/gridstats:latest
+
 
   create-release:
     needs: build-and-push
