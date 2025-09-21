@@ -6,10 +6,13 @@ from app.routers import compare
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4200"],  # Angular-Frontend darf zugreifen
-    allow_origins=["https://claudio.stefanhohl.ch"],
+    allow_origins=[
+        "http://localhost:4200",
+        "https://claudio.stefanhohl.ch",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 app.include_router(compare.router, prefix="/api")
