@@ -1,8 +1,7 @@
 from typing import Tuple
 import pandas as pd
-import fastf1
-
-fastf1.Cache.enable_cache("C:/Users/claud/.fastf1_cache")
+import os, fastf1
+fastf1.Cache.enable_cache(os.getenv("FASTF1_CACHE", "/data/fastf1_cache"))
 
 def _to_numeric(df: pd.DataFrame, cols=("Position","Points")) -> pd.DataFrame:
     df = df.copy()

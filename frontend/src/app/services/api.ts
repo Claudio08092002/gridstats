@@ -23,8 +23,7 @@ export interface SeasonResponse {
 export class ApiService {
   constructor(private http: HttpClient) {}
 
-  loadSeason(year: number): Observable<SeasonResponse> {
-    const BASE = 'http://127.0.0.1:8000'; // FastAPI Port
-    return this.http.get<SeasonResponse>(`${BASE}/api/f1/season/${year}`);
+  loadSeason(year: number) {
+    return this.http.get<SeasonResponse>(`/api/f1/season/${year}`);
   }
 }
