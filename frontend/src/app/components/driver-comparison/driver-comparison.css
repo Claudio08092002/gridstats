@@ -103,6 +103,12 @@ button:active { transform: translateY(0); filter: brightness(0.95); }
   height: 520px; /* größerer Chart */
   border-top: 1px solid var(--ring);
 }
+.charts { position: relative; }
+.empty {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  color: var(--muted); font-size: 14px; pointer-events: none;
+}
 
 .footer {
   text-align: center;

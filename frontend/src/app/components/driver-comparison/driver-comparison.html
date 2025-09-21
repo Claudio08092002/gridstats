@@ -3,42 +3,46 @@
     <div class="controls">
       <div class="field span-3">
         <label for="season">Saison</label>
-        <select id="season" [(ngModel)]="season">
-          <option *ngFor="let y of seasons" [value]="y">{{ y }}</option>
+        <select id="season" [(ngModel)]="season" (change)="onSeasonChange()">
+          <option *ngFor="let y of seasons" [ngValue]="y">{{ y }}</option>
         </select>
       </div>
 
-      <div class="field span-4">
+      <div class="field span-4" *ngIf="driverKeys.length">
         <label for="driver1">Fahrer 1</label>
         <select id="driver1" [(ngModel)]="driver1">
-          <option *ngFor="let d of drivers" [value]="d.code">
-            {{ d.name }} ({{ d.code }})
+          <option *ngFor="let code of driverKeys" [ngValue]="code">
+            {{ driverMap[code].name }} ({{ code }})
           </option>
         </select>
       </div>
 
-      <div class="field span-4">
+      <div class="field span-4" *ngIf="driverKeys.length">
         <label for="driver2">Fahrer 2</label>
         <select id="driver2" [(ngModel)]="driver2">
-          <option *ngFor="let d of drivers" [value]="d.code">
-            {{ d.name }} ({{ d.code }})
+          <option *ngFor="let code of driverKeys" [ngValue]="code">
+            {{ driverMap[code].name }} ({{ code }})
           </option>
         </select>
       </div>
 
-      <div class="field span-3 actions">
+      <div class="field span-3 actions" *ngIf="driverKeys.length">
         <button (click)="onCompare()">Vergleichen</button>
       </div>
     </div>
 
-    <div class="legend">
-      <span><span class="dot" [style.background]="color1"></span>{{ driver1Name }}</span>
-      <span><span class="dot" [style.background]="color2"></span>{{ driver2Name }}</span>
-    </div>
+    <div class="legend" *ngIf="driver1 && driver2">
+  <span><span class="dot" [style.background]="color1"></span>{{ driverMap[driver1].name }}</span>
+  <span><span class="dot" [style.background]="color2"></span>{{ driverMap[driver2].name }}</span>
+</div>
 
-    <div class="charts">
-      <canvas #chartCanvas></canvas>
-    </div>
+<div class="charts">
+  <canvas #chartCanvas></canvas>
+  <div class="empty" *ngIf="!(driver1 && driver2)">Bitte zwei Fahrer waehlen und „Vergleichen“ klicken.</div>
+</div>
+
+    <div *ngIf="loading">Lädt Season …</div>
+    <div *ngIf="errorMsg" class="error">Fehler: {{ errorMsg }}</div>
   </div>
 
   <footer class="footer">© {{ currentYear }} GridStats</footer>

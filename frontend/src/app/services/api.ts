@@ -1,9 +1,30 @@
-import { inject, Injectable } from '@angular/core';
+// frontend/src/app/services/api.ts
+import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { environment } from '../../enviroments/enviroments';
+import { Observable } from 'rxjs';
+
+export interface DriverSummary {
+  name: string;
+  team: string | null;
+  total_points: number;
+  wins: number;
+  podiums: number;
+  dnfs: number;
+  avg_finish: number | null;
+  poles: number;
+}
+
+export interface SeasonResponse {
+  season: number;
+  drivers: Record<string, DriverSummary>;
+}
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  private http = inject(HttpClient);
-  private base = environment.apiBase;
+  constructor(private http: HttpClient) {}
+
+  loadSeason(year: number): Observable<SeasonResponse> {
+    const BASE = 'http://127.0.0.1:8000'; // FastAPI Port
+    return this.http.get<SeasonResponse>(`${BASE}/api/f1/season/${year}`);
+  }
 }
