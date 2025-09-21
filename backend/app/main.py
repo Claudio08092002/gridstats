@@ -7,6 +7,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:4200"],  # Angular-Frontend darf zugreifen
+    allow_origins=["https://claudio.stefanhohl.ch"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

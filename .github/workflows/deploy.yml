@@ -1,51 +1,49 @@
-name: Publish Docker image, Release & Version-bump
+name: Build & Push Backend + Frontend, Release & Version-bump
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version for the Docker image & GitHub Release (e.g., 1.0.0)'
+        description: 'Version for Docker images & GitHub Release (e.g., 1.0.0)'
         required: true
 
 permissions:
-  contents: write
+  contents: write   # commit & release
   packages: write
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           persist-credentials: true
           fetch-depth: 0
 
-      # --- Version bump NUR im Frontend (monorepo) ---
+      # --- Version bump NUR im Frontend ---
+      - name: Set up Node (for npm version bump)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
       - name: Bump frontend/package.json version
         run: |
           cd frontend
           npm version ${{ github.event.inputs.version }} --no-git-tag-version
 
-      - name: Commit version bump
+      - name: Commit version bump to main
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add frontend/package.json
-          git commit -m "chore(release): bump frontend version to v${{ github.event.inputs.version }}" || echo "No changes to commit"
+          git add frontend/package.json frontend/package-lock.json || true
+          git commit -m "chore(release): bump frontend to v${{ github.event.inputs.version }}" || echo "No changes to commit"
           git push origin HEAD:main
-
-      # Optional: Wenn du vorab das Angular-Build prüfen willst, entkommentieren
-      # - name: Node setup
-      #   uses: actions/setup-node@v4
-      #   with:
-      #     node-version: 20
-      # - name: Install & build frontend (optional)
-      #   run: |
-      #     cd frontend
-      #     npm ci
-      #     npm run build -- --configuration production
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -56,13 +54,8 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Define image tags
-        id: vars
-        run: |
-          echo "IMAGE=claudio08092002/gridstats" >> $GITHUB_ENV
-          echo "TAG=${{ github.event.inputs.version }}" >> $GITHUB_ENV
-
-      - name: Build & Push Docker image (backend)
+      # -------- Backend Image --------
+      - name: Build & Push backend image
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -70,15 +63,28 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: |
-            claudio08092002/gridstats:${{ env.TAG }}
+            claudio08092002/gridstats:${{ github.event.inputs.version }}
             claudio08092002/gridstats:latest
 
+      # -------- Frontend Image --------
+      - name: Build & Push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./frontend/Dockerfile
+          push: true
+          platforms: linux/amd64
+          build-args: |
+            ANGULAR_PROJECT=frontend   # falls dein Angular-Projekt anders heißt → hier anpassen
+          tags: |
+            claudio08092002/gridstats-frontend:${{ github.event.inputs.version }}
+            claudio08092002/gridstats-frontend:latest
 
   create-release:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout for commit info
+      - name: Checkout (for commit info)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -92,17 +98,17 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.event.inputs.version }}
           name: Release v${{ github.event.inputs.version }}
           body: |
-            **Docker image:** `claudio08092002/gridstats:${{ github.event.inputs.version }}`
-            **Also tagged:** `latest`
-            **Commit:** `${{ steps.info.outputs.COMMIT_SHA }}`
+            **Images pushed**
+            - `claudio08092002/gridstats:${{ github.event.inputs.version }}` (also `latest`)
+            - `claudio08092002/gridstats-frontend:${{ github.event.inputs.version }}` (also `latest`)
 
+            **Commit:** `${{ steps.info.outputs.COMMIT_SHA }}`
+            
             ${{ steps.info.outputs.COMMIT_MSG }}
           draft: false
           prerelease: false
