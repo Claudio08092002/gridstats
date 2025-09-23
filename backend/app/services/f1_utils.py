@@ -1,7 +1,21 @@
 from typing import Tuple
 import pandas as pd
-import os, fastf1
-fastf1.Cache.enable_cache(os.getenv("FASTF1_CACHE", "/data/fastf1_cache"))
+import os
+import fastf1
+
+# Default je nach Betriebssystem
+default_cache = (
+    "C:/Users/claud/.fastf1_cache" if os.name == "nt" else "/data/fastf1_cache"
+)
+
+# Entweder Umgebungsvariable oder Default nehmen
+cache_dir = os.getenv("FASTF1_CACHE", default_cache)
+
+# Ordner sicherstellen
+os.makedirs(cache_dir, exist_ok=True)
+
+print(">>> Using FastF1 cache dir:", cache_dir)
+fastf1.Cache.enable_cache(cache_dir)
 
 def _to_numeric(df: pd.DataFrame, cols=("Position","Points")) -> pd.DataFrame:
     df = df.copy()

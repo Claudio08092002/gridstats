@@ -31,18 +31,41 @@
       </div>
     </div>
 
-    <div class="legend" *ngIf="driver1 && driver2">
-  <span><span class="dot" [style.background]="color1"></span>{{ driverMap[driver1].name }}</span>
-  <span><span class="dot" [style.background]="color2"></span>{{ driverMap[driver2].name }}</span>
-</div>
+    <div class="legend" *ngIf="compared && driver1 && driver2">
+      <span><span class="dot" [style.background]="color1"></span>{{ driverMap[driver1].name }}</span>
+      <span><span class="dot" [style.background]="color2"></span>{{ driverMap[driver2].name }}</span>
+    </div>
 
-<div class="charts">
-  <canvas #chartCanvas></canvas>
-  <div class="empty" *ngIf="!(driver1 && driver2)">Bitte zwei Fahrer waehlen und „Vergleichen“ klicken.</div>
-</div>
+    <!-- Einzel-Charts nebeneinander -->
+    <div class="charts-grid" *ngIf="compared">
+      <div class="chart-card">
+        <h3>Punkte</h3>
+        <div class="chart-wrap"><canvas #pointsChart></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Siege</h3>
+        <div class="chart-wrap"><canvas #winsChart></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Podien</h3>
+        <div class="chart-wrap"><canvas #podiumsChart></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Poles</h3>
+        <div class="chart-wrap"><canvas #polesChart></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Ø Ziel</h3>
+        <div class="chart-wrap"><canvas #avgChart></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>DNFs</h3>
+        <div class="chart-wrap"><canvas #dnfsChart></canvas></div>
+      </div>
+    </div>
 
-    <div *ngIf="loading">Lädt Season …</div>
-    <div *ngIf="errorMsg" class="error">Fehler: {{ errorMsg }}</div>
+    <div *ngIf="loading" class="status">Lädt Season …</div>
+    <div *ngIf="errorMsg" class="status error">Fehler: {{ errorMsg }}</div>
   </div>
 
   <footer class="footer">© {{ currentYear }} GridStats</footer>

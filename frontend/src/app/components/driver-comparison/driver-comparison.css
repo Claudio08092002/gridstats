@@ -16,7 +16,7 @@
 }
 
 .wrap {
-  max-width: 1400px;  /* breiter */
+  max-width: 1400px;
   margin: 0 auto;
   padding: 24px;
 }
@@ -29,13 +29,13 @@
   overflow: hidden;
 }
 
+/* Controls */
 .controls {
   display: grid;
   gap: 16px;
   grid-template-columns: repeat(12, 1fr);
   padding: 24px;
 }
-
 .field { grid-column: span 12; }
 @media (min-width: 900px) {
   .field.span-3 { grid-column: span 3; }
@@ -79,6 +79,7 @@ button {
 button:hover { transform: translateY(-1px); }
 button:active { transform: translateY(0); filter: brightness(0.95); }
 
+/* Legend */
 .legend {
   display: flex;
   gap: 24px;
@@ -89,30 +90,59 @@ button:active { transform: translateY(0); filter: brightness(0.95); }
   font-size: 13px;
   border-top: 1px solid var(--ring);
 }
-
 .dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  display: inline-block;
-  margin-right: 8px;
+  width: 12px; height: 12px; border-radius: 50%;
+  display: inline-block; margin-right: 8px;
 }
 
-.charts {
+/* Gesamtvergleich */
+.chart-single {
   padding: 24px;
-  height: 520px; /* größerer Chart */
   border-top: 1px solid var(--ring);
 }
-.charts { position: relative; }
-.empty {
-  position: absolute; inset: 0;
-  display: grid; place-items: center;
-  color: var(--muted); font-size: 14px; pointer-events: none;
+.chart-single .chart-wrap {
+  position: relative;
+  height: 320px;   /* etwas kompakter */
+  width: 100%;
 }
 
+/* Einzel-Charts nebeneinander (responsive) */
+.charts-grid {
+  padding: 24px;
+  border-top: 1px solid var(--ring);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+.chart-card {
+  background: #0f131b;
+  border: 1px solid var(--ring);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex; flex-direction: column;
+  min-height: 200px;  /* kompakter */
+}
+.chart-card h3 {
+  margin: 0 0 8px;
+  font-size: 14px; font-weight: 600; color: #cbd5e1;
+}
+.chart-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 150px;
+}
+
+/* Canvas füllt Container */
+canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Status/Footer */
+.status { margin: 10px 24px 24px; color:#cbd5e1; }
+.status.error { color:#fca5a5; }
 .footer {
-  text-align: center;
-  color: var(--muted);
-  font-size: 13px;
-  padding: 22px 0 4px;
+  text-align: center; color: var(--muted);
+  font-size: 13px; padding: 22px 0 4px;
 }
