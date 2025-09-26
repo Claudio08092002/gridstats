@@ -1,4 +1,3 @@
-import logging
 import os
 from collections import defaultdict
 from typing import Dict, Any
@@ -13,7 +12,6 @@ from app.services.f1_utils import load_results_strict
 
 router = APIRouter(prefix="/f1", tags=["fastf1"])
 SCHEMA_VERSION = 5
-logger = logging.getLogger(__name__)
 
 # ---- Cache (nur hier einmal) -------------------------------------------------
 default_cache = "C:/Users/claud/.fastf1_cache" if os.name == "nt" else "/data/fastf1_cache"
@@ -304,12 +302,10 @@ def load_season(year: int, response: Response, refresh: bool = False) -> Dict[st
     - Poles: GridPosition==1; Fallback via Quali/SQ (ergast)
     """
     try:
-        logger.info("/season request: year=%s refresh=%s", year, refresh)
         if not refresh:
             cached = _load_from_cache(year)
             if cached and isinstance(cached, dict):
                 if cached.get("schema_version") == SCHEMA_VERSION and cached.get("drivers"):
-                    logger.info("Returning cached season %s (drivers=%s)", year, len(cached.get("drivers", {})))
                     response.headers["Cache-Control"] = "public, max-age=86400"
                     return cached
             # If cache exists but is empty, fall through to rebuild and overwrite it
@@ -340,7 +336,6 @@ def load_season(year: int, response: Response, refresh: bool = False) -> Dict[st
             # Typical columns in df after load_results_strict:
             # ['Abbreviation', 'Position', 'Points', 'Status', 'GridPosition', 'TeamName',
             #  'TeamColor', 'FullName', 'BroadcastName', 'DriverNumber', ...]
-            logger.debug("Season %s round %s result columns: %s", year, rnd, list(df.columns))
             for need in ("Points", "Position"):
                 if need not in df.columns:
                     df[need] = pd.NA
