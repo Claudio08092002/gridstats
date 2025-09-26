@@ -3,6 +3,7 @@ from collections import defaultdict
 from typing import Dict, Any
 
 import fastf1
+import time
 from fastf1.ergast import Ergast, interface as ergast_interface
 import pandas as pd
 from fastapi import APIRouter, HTTPException, Response
@@ -12,6 +13,11 @@ from app.services.f1_utils import load_results_strict
 
 router = APIRouter(prefix="/f1", tags=["fastf1"])
 SCHEMA_VERSION = 5
+
+# In-memory season cache to avoid recomputation after first heavy build.
+# Key: year -> {"payload": dict, "ts": epoch_seconds}
+_SEASON_CACHE: dict[int, dict[str, Any]] = {}
+_SEASON_CACHE_TTL = int(os.getenv("SEASON_CACHE_TTL", "43200"))  # 12h default
 
 # ---- Cache (nur hier einmal) -------------------------------------------------
 default_cache = "C:/Users/claud/.fastf1_cache" if os.name == "nt" else "/data/fastf1_cache"
@@ -303,13 +309,27 @@ def load_season(year: int, response: Response, refresh: bool = False) -> Dict[st
     - Poles: GridPosition==1; Fallback via Quali/SQ (ergast)
     """
     try:
+        # 1. In-memory hot cache first
         if not refresh:
-            cached = _load_from_cache(year)
-            if cached and isinstance(cached, dict):
-                if cached.get("schema_version") == SCHEMA_VERSION and cached.get("drivers"):
+            mem_entry = _SEASON_CACHE.get(year)
+            if mem_entry:
+                ts = mem_entry.get("ts", 0)
+                if time.time() - float(ts) <= _SEASON_CACHE_TTL:
+                    payload = mem_entry.get("payload")
+                    if isinstance(payload, dict) and payload.get("schema_version") == SCHEMA_VERSION:
+                        response.headers["Cache-Control"] = "public, max-age=86400"
+                        return payload  # Fast in-memory hit
+
+        # 2. Persistent JSON cache (disk)
+        if not refresh:
+            disk_cached = _load_from_cache(year)
+            if disk_cached and isinstance(disk_cached, dict):
+                if disk_cached.get("schema_version") == SCHEMA_VERSION and disk_cached.get("drivers"):
+                    # Promote to in-memory cache
+                    _SEASON_CACHE[year] = {"payload": disk_cached, "ts": time.time()}
                     response.headers["Cache-Control"] = "public, max-age=86400"
-                    return cached
-            # If cache exists but is empty, fall through to rebuild and overwrite it
+                    return disk_cached
+        # If caches miss or refresh=True -> rebuild
 
         schedule = fastf1.get_event_schedule(year, include_testing=False)
         ergast_client = Ergast()
@@ -490,9 +510,11 @@ def load_season(year: int, response: Response, refresh: bool = False) -> Dict[st
             "season": year,
             "drivers": out,
         }
+        # Persist to disk + memory
         _save_to_cache(year, payload)
+        _SEASON_CACHE[year] = {"payload": payload, "ts": time.time()}
         response.headers["Cache-Control"] = "public, max-age=86400"
         return payload
 
-    except Exception as e:
+    except Exception as e:  # pragma: no cover - defensive
         raise HTTPException(status_code=500, detail=str(e))
