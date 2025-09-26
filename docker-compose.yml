@@ -11,8 +11,10 @@ services:
     volumes:
       - fastf1_cache:/data/fastf1_cache
       - season_cache:/app/app/season_cache
-    expose:
-      - "8000"
+    # Expose only inside compose is not visible to outside reverse proxy on host.
+    # Map port so external nginx / openresty can reach backend directly if needed.
+    ports:
+      - "8000:8000"
     restart: unless-stopped
 
   frontend:

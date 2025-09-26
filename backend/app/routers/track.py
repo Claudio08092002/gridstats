@@ -15,6 +15,10 @@ fastf1.Cache.enable_cache(cache_dir)
 
 router = APIRouter(prefix="/f1", tags=["fastf1-tracks"])
 
+# Simple in-process cache for track list to avoid repeated schedule scans on cold start
+_TRACK_CACHE: dict[str, Any] | None = None
+_TRACK_CACHE_YEARS: str | None = None
+
 ERGAST_BASE_URL = os.getenv("ERGAST_BASE_URL", "https://api.jolpi.ca/ergast/f1")
 ergast_interface.BASE_URL = ERGAST_BASE_URL
 
@@ -51,13 +55,43 @@ def _ergast_to_dataframe(resp: Any) -> pd.DataFrame | None:
 
 @router.get("/tracks")
 def list_tracks() -> List[Dict[str, Any]]:
-    """Return a unique list of tracks between 2018 and 2025.
+    """Return a unique list of tracks for configured seasons.
 
-    Each item contains a representative (year, round) to query a track map later.
+    Environment variable FASTF1_TRACK_YEARS can be like:
+      - "2019-2025" (inclusive range)
+      - "2022" (single year)
+      - "2018,2020,2024" (comma separated list)
+    Fallback default: 2018-2025.
+    Cached in-memory until process restart or different FASTF1_TRACK_YEARS value.
     """
-    # Use a stable per-circuit key: CircuitShortName + Country
+    global _TRACK_CACHE, _TRACK_CACHE_YEARS
+    years_env = os.getenv("FASTF1_TRACK_YEARS", "2018-2025").strip()
+    if _TRACK_CACHE is not None and _TRACK_CACHE_YEARS == years_env:
+        return _TRACK_CACHE["items"]  # type: ignore
+
+    # Parse years spec
+    years: list[int] = []
+    try:
+        if "," in years_env:
+            years = [int(p) for p in years_env.split(",") if p.strip().isdigit()]
+        elif "-" in years_env:
+            a, b = years_env.split("-", 1)
+            ya, yb = int(a), int(b)
+            if ya > yb:
+                ya, yb = yb, ya
+            years = list(range(ya, yb + 1))
+        else:
+            years = [int(years_env)]
+    except Exception:
+        years = list(range(2018, 2026))
+    if not years:
+        years = list(range(2018, 2026))
+
+    # Safety clamp
+    years = [y for y in years if 2000 <= y <= 2100]
+
     seen_keys: dict[str, Dict[str, Any]] = {}
-    for year in range(2018, 2026):
+    for year in years:
         try:
             schedule = fastf1.get_event_schedule(year, include_testing=False)
         except Exception:
@@ -93,8 +127,9 @@ def list_tracks() -> List[Dict[str, Any]]:
                 }
 
     items = list(seen_keys.values())
-    # Sort by name for nicer UI
     items.sort(key=lambda x: (x.get("name") or ""))
+    _TRACK_CACHE = {"items": items}
+    _TRACK_CACHE_YEARS = years_env
     return items
 
 
