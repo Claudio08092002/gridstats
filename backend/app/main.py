@@ -19,8 +19,8 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:4200",
         "https://claudio.stefanhohl.ch",
+        "https://gridstats-api.stefanhohl.ch",
     ],
-    allow_origin_regex=r"https://(?:.+\.)?stefanhohl\.ch",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
