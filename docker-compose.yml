@@ -1,8 +1,8 @@
 version: "3.9"
 
 services:
-  backend:
-    image: claudio08092002/gridstats:latest         # Backend-Image aus Registry
+  gridstats-backend:
+    image: claudio08092002/gridstats:latest
     container_name: gridstats-backend
     environment:
       - FASTF1_CACHE=/data/fastf1_cache
@@ -11,17 +11,15 @@ services:
     volumes:
       - fastf1_cache:/data/fastf1_cache
       - season_cache:/app/app/season_cache
-    # Expose only inside compose is not visible to outside reverse proxy on host.
-    # Map port so external nginx / openresty can reach backend directly if needed.
     ports:
-      - "8000:8000"
+      - "7500:8000"
     restart: unless-stopped
 
-  frontend:
-    image: claudio08092002/gridstats-frontend:latest # Frontend-Image aus Registry
+  gridstats-frontend:
+    image: claudio08092002/gridstats-frontend:latest
     container_name: gridstats-frontend
     ports:
-      - "80:80"                                      # oder weglassen, wenn dein externes Proxy-GUI mapped
+      - "7501:80"
     restart: unless-stopped
 
 volumes:

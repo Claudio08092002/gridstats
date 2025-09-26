@@ -18,8 +18,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:4200",
-        "https://claudio.stefanhohl.ch",
-        "https://gridstats-api.stefanhohl.ch",
+        "https://claudio.stefanhohl.ch"
     ],
     allow_credentials=True,
     allow_methods=["*"],
