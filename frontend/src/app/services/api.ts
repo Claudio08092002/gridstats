@@ -65,20 +65,50 @@ export interface TrackMapResponse {
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
+  private readonly apiBase = this.resolveApiBase(environment.apiBase);
+
   constructor(private http: HttpClient) {}
 
+  private resolveApiBase(rawBase: string): string {
+    if (!rawBase) {
+      return '';
+    }
+
+    if (rawBase.startsWith('http://')) {
+      // Avoid mixed content when the UI runs over HTTPS.
+      try {
+        if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+          return 'https://' + rawBase.replace(/^https?:\/\//, '');
+        }
+      } catch {
+        // SSR or other non-browser environments; fall back to the provided base.
+      }
+    }
+
+    return rawBase;
+  }
+
+  private buildUrl(path: string): string {
+    if (!this.apiBase) {
+      return path;
+    }
+    if (path.startsWith('/')) {
+      return `${this.apiBase}${path}`;
+    }
+    return `${this.apiBase}/${path}`;
+  }
+
   loadSeason(year: number, refresh: boolean = false) {
-    const url = `${environment.apiBase}/f1/season/${year}` + (refresh ? `?refresh=true` : ``);
+    const suffix = refresh ? '?refresh=true' : '';
+    const url = this.buildUrl(`/f1/season/${year}${suffix}`);
     return this.http.get<SeasonResponse>(url);
   }
 
   getTracks() {
-    const url = `${environment.apiBase}/f1/tracks`;
-    return this.http.get<TrackInfo[]>(url);
+    return this.http.get<TrackInfo[]>(this.buildUrl('/f1/tracks'));
   }
 
   getTrackMap(year: number, round: number) {
-    const url = `${environment.apiBase}/f1/trackmap/${year}/${round}`;
-    return this.http.get<TrackMapResponse>(url);
+    return this.http.get<TrackMapResponse>(this.buildUrl(`/f1/trackmap/${year}/${round}`));
   }
 }
