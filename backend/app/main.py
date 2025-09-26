@@ -20,6 +20,7 @@ app.add_middleware(
         "http://localhost:4200",
         "https://claudio.stefanhohl.ch",
     ],
+    allow_origin_regex=r"https://(?:.+\.)?stefanhohl\.ch",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
