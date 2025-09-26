@@ -5,7 +5,7 @@
       <select id="trackSelect" [(ngModel)]="selectedKey" (change)="onSelectKey()" class="select select--dark border">
         <option [ngValue]="null" disabled selected>— choose a track —</option>
         <option *ngFor="let t of tracks" [value]="t.key">
-          {{ flagFor(t.country) }} {{ t.name }} (R{{t.round}} {{t.year}})
+          {{ flagFor(t.country) }} {{ t.name }} ({{t.year}})
         </option>
       </select>
     </div>

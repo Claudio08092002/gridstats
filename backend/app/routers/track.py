@@ -1,5 +1,6 @@
 import os
-from typing import Any, Dict, List
+import time
+from typing import Any, Dict, List, Tuple
 
 import fastf1
 import pandas as pd
@@ -13,6 +14,39 @@ os.makedirs(cache_dir, exist_ok=True)
 fastf1.Cache.enable_cache(cache_dir)
 
 router = APIRouter(prefix="/f1", tags=["fastf1-tracks"])
+
+# --- In-memory caches -------------------------------------------------------
+# Track list cache (keyed only by years range logic embedded here) could be added later.
+# Track map cache: (year, round_number) -> {"data": payload, "ts": epoch_seconds}
+_TRACK_MAP_CACHE: dict[Tuple[int, int], Dict[str, Any]] = {}
+_TRACK_MAP_TTL_SECONDS = int(os.getenv("TRACK_MAP_CACHE_TTL", "43200"))  # 12h default
+_TRACK_MAP_MAX_ITEMS = int(os.getenv("TRACK_MAP_CACHE_MAX", "200"))
+
+def _track_map_cache_get(year: int, rnd: int) -> Dict[str, Any] | None:
+    entry = _TRACK_MAP_CACHE.get((year, rnd))
+    if not entry:
+        return None
+    ts = entry.get("ts")
+    if isinstance(ts, (int, float)) and (time.time() - float(ts) <= _TRACK_MAP_TTL_SECONDS):
+        return entry.get("data")  # type: ignore
+    # stale -> delete
+    _TRACK_MAP_CACHE.pop((year, rnd), None)
+    return None
+
+def _track_map_cache_put(year: int, rnd: int, data: Dict[str, Any]) -> None:
+    # Simple size cap (FIFO-ish) to avoid unbounded growth
+    if len(_TRACK_MAP_CACHE) >= _TRACK_MAP_MAX_ITEMS:
+        # remove oldest by ts
+        oldest_key = None
+        oldest_ts = 1e18
+        for k, v in _TRACK_MAP_CACHE.items():
+            ts = v.get("ts", time.time())
+            if ts < oldest_ts:
+                oldest_ts = ts
+                oldest_key = k
+        if oldest_key is not None:
+            _TRACK_MAP_CACHE.pop(oldest_key, None)
+    _TRACK_MAP_CACHE[(year, rnd)] = {"data": data, "ts": time.time()}
 
 
 def _safe_str(val: Any) -> str:
@@ -75,6 +109,10 @@ def get_track_map(year: int, round_number: int) -> Dict[str, Any]:
     Returns a TrackMap-like structure: { track: [{x,y,distance}], corners: [] }
     Corners are left empty for now; can be enhanced later if circuit data is available.
     """
+    # Serve from cache first
+    cached = _track_map_cache_get(year, round_number)
+    if cached is not None:
+        return cached
     def _rotate(xy: list[float] | tuple[float, float], *, angle: float) -> list[float]:
         # Rotation matrix [[cos, sin], [-sin, cos]] used in the example
         c = float(np.cos(angle))
@@ -456,4 +494,7 @@ def get_track_map(year: int, round_number: int) -> Dict[str, Any]:
     data, source_year, source_round = result_tuple
     winner_info = _get_race_winner(source_year, source_round, winner_names)
     data["winner"] = winner_info
+
+    # Store using the originally requested year/round, not the source (so lookup is stable)
+    _track_map_cache_put(year, round_number, data)
     return data

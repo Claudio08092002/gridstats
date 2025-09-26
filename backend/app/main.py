@@ -1,17 +1,11 @@
 # backend/app/main.py
-import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import compare, track
 
-# Raise the global log level so module INFO logs and uvicorn access logs are visible.
-root_logger = logging.getLogger()
-if root_logger.level > logging.INFO:
-    root_logger.setLevel(logging.INFO)
-logging.getLogger("uvicorn.access").setLevel(logging.INFO)
-logging.getLogger("uvicorn.error").setLevel(logging.INFO)
+# (Logging removed as requested) 
 
 app = FastAPI()
 app.add_middleware(
