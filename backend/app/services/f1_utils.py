@@ -40,6 +40,7 @@ def _norm_abbreviation(df: pd.DataFrame, ses) -> pd.DataFrame:
             for num in pd.unique(df["DriverNumber"].dropna()):
                 try:
                     info = ses.get_driver(int(num))
+
                     if info and "Abbreviation" in info:
                         mp[num] = info["Abbreviation"]
                 except Exception:
@@ -93,6 +94,61 @@ def _enrich_from_source(base: pd.DataFrame, source: pd.DataFrame | None) -> pd.D
             merged.rename(columns={src_col: col}, inplace=True)
     return merged
 
+def _build_dnf_maps(ses) -> tuple[dict[str, bool], dict[str, bool]]:
+    """Create DNF maps keyed by Abbreviation and DriverNumber from a FastF1 session.
+    Falls back to Status when explicit dnf is missing. We treat 'not classified' as DNF.
+    """
+    by_abbr: dict[str, bool] = {}
+    by_num: dict[str, bool] = {}
+    try:
+        res = getattr(ses, "results", None)
+        if res is None or res.empty:
+            return by_abbr, by_num
+        for _, row in res.iterrows():
+            abbr = row.get("Abbreviation") or row.get("Driver")
+            num = row.get("DriverNumber")
+            info = None
+            if pd.notna(num):
+                try:
+                    info = ses.get_driver(int(num))
+                except Exception:
+                    info = None
+            dnf_val = None
+            if isinstance(info, dict):
+                if "dnf" in info:
+                    dnf_val = info.get("dnf")
+                elif "DNF" in info:
+                    dnf_val = info.get("DNF")
+            if dnf_val is None:
+                status = str(row.get("Status") or "").strip().lower()
+                if status:
+                    finish_like = status.startswith("+") or status in ("finished", "lapped")
+                    # treat 'not classified' as DNF, so do not exclude it
+                    excluded = status in ("disqualified", "did not start", "excluded")
+                    dnf_val = (not finish_like) and (not excluded)
+                else:
+                    dnf_val = False
+            if abbr and pd.notna(abbr):
+                by_abbr[str(abbr)] = bool(dnf_val)
+            if pd.notna(num):
+                by_num[str(int(num))] = bool(dnf_val)
+    except Exception:
+        pass
+    return by_abbr, by_num
+
+def _apply_dnf_column(df: pd.DataFrame | None, dnf_by_abbr: dict[str, bool], dnf_by_num: dict[str, bool]) -> pd.DataFrame | None:
+    if df is None or df.empty:
+        return df
+    df = df.copy()
+    if "Abbreviation" in df.columns:
+        df["DNF"] = df["Abbreviation"].map(lambda x: bool(dnf_by_abbr.get(str(x), False)))
+    elif "DriverNumber" in df.columns:
+        df["DNF"] = df["DriverNumber"].map(lambda x: bool(dnf_by_num.get(str(x), False)))
+    else:
+        # default False
+        df["DNF"] = False
+    return df
+
 def load_results_strict(year: int, round_number: int) -> Tuple[str, pd.DataFrame]:
     """
     Robust:
@@ -133,12 +189,16 @@ def load_results_strict(year: int, round_number: int) -> Tuple[str, pd.DataFrame
 
     # 2a) wenn FastF1 schon gültige Punkte hat -> nimm F1
     if f1 is not None and has_points(f1):
+        dnf_abbr, dnf_num = _build_dnf_maps(ses_f1)
         enriched = _enrich_from_source(f1, er)
+        enriched = _apply_dnf_column(enriched, dnf_abbr, dnf_num)
         return "fastf1", enriched
 
     # 2b) sonst wenn Ergast Punkte hat -> nimm Ergast
     if er is not None and has_points(er):
+        dnf_abbr, dnf_num = _build_dnf_maps(ses_f1)
         enriched = _enrich_from_source(er, f1)
+        enriched = _apply_dnf_column(enriched, dnf_abbr, dnf_num)
         return "ergast", enriched
 
     # 2c) wenn F1 Positionen hat, aber Points leer: versuche Points aus Ergast zu mergen
@@ -158,6 +218,8 @@ def load_results_strict(year: int, round_number: int) -> Tuple[str, pd.DataFrame
             merged["Points"] = pd.to_numeric(merged["Points"], errors="coerce").fillna(0)
             merged = _enrich_from_source(merged, er)
             merged = _enrich_from_source(merged, f1)
+            dnf_abbr, dnf_num = _build_dnf_maps(ses_f1)
+            merged = _apply_dnf_column(merged, dnf_abbr, dnf_num)
             return "f1+ergast_points", merged
 
     # 3) Notlösung: Laps ableiten
@@ -181,4 +243,6 @@ def load_results_strict(year: int, round_number: int) -> Tuple[str, pd.DataFrame
     })
     df_res = _enrich_from_source(df_res, er)
     df_res = _enrich_from_source(df_res, f1)
+    dnf_abbr, dnf_num = _build_dnf_maps(ses3)
+    df_res = _apply_dnf_column(df_res, dnf_abbr, dnf_num)
     return "derived", df_res

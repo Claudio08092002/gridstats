@@ -1,0 +1,27 @@
+<div class="card">
+  <div class="controls">
+    <div class="field span-6">
+      <label for="trackSelect">Track</label>
+      <select id="trackSelect" [(ngModel)]="selectedKey" (change)="onSelectKey()" class="select select--dark border">
+        <option [ngValue]="null" disabled selected>— choose a track —</option>
+        <option *ngFor="let t of tracks" [value]="t.key">
+          {{ flagFor(t.country) }} {{ t.name }} (R{{t.round}} {{t.year}})
+        </option>
+      </select>
+    </div>
+  </div>
+
+  <div class="map-card" *ngIf="trackMap">
+    <svg class="track" id="trackMap" width="800" height="600"></svg>
+  </div>
+
+  <div class="race-summary" *ngIf="trackMap?.winner as winner">
+    <div class="race-summary__label">Winner {{ winner.year }}{{ winner.event ? ' • ' + winner.event : '' }}:</div>
+    <div class="race-summary__value">
+      <span class="race-summary__driver">{{ winner.driver || 'Unknown driver' }}</span>
+      <span class="race-summary__team" *ngIf="winner.team">({{ winner.team }})</span>
+    </div>
+  </div>
+
+  <footer class="footer">© {{ currentYear }} GridStats</footer>
+</div>

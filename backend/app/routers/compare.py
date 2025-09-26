@@ -187,7 +187,8 @@ def _season_pole_stats(year: int) -> tuple[Dict[str, int], Dict[str, list[int]]]
 
 
 _FINISH_LIKE = {"finished", "lapped"}
-_NON_DNF_EXCLUDE = {"disqualified", "did not start", "not classified", "excluded"}
+# Consider these as non-DNF outcomes. Note: "not classified" will be treated as DNF.
+_NON_DNF_EXCLUDE = {"disqualified", "did not start", "excluded"}
 
 
 def _season_dnf_counts(year: int) -> Dict[str, int]:
@@ -317,7 +318,6 @@ def load_season(year: int, response: Response, refresh: bool = False) -> Dict[st
         # Compute poles from race grid positions per round
         pole_counts: defaultdict[str, int] = defaultdict(int)
         pole_rounds: defaultdict[str, list[int]] = defaultdict(list)
-        dnf_counts = _season_dnf_counts(year)
         results_by_driver: Dict[str, Dict[str, Any]] = {}
 
         for _, ev in schedule.iterrows():
@@ -418,6 +418,20 @@ def load_season(year: int, response: Response, refresh: bool = False) -> Dict[st
                     if ipos <= 3:
                         d["podiums"] += 1
 
+                # DNF from load_results_strict (added in f1_utils)
+                try:
+                    dnf_raw = row.get("DNF")
+                    is_dnf = False
+                    if pd.notna(dnf_raw):
+                        if isinstance(dnf_raw, str):
+                            is_dnf = dnf_raw.strip().lower() in ("1", "true", "yes", "y", "t")
+                        else:
+                            is_dnf = bool(dnf_raw)
+                    if is_dnf:
+                        d["dnfs"] += 1
+                except Exception:
+                    pass
+
             # Build DriverNumber -> Abbreviation map from race df (ensures consistent keys)
             num_to_abbr: Dict[str, str] = {}
             if "DriverNumber" in df.columns and "Abbreviation" in df.columns:
@@ -449,8 +463,7 @@ def load_season(year: int, response: Response, refresh: bool = False) -> Dict[st
                 entry["poles"] = int(count)
                 entry["pole_rounds"] = pole_rounds.get(code, []).copy()
 
-        for code, entry in results_by_driver.items():
-            entry["dnfs"] = int(dnf_counts.get(code, 0))
+        # DNFs are already counted per round from the DataFrame's DNF column
 
         # Finalisieren
         out: Dict[str, Any] = {}

@@ -22,12 +22,14 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 0.9rem 1.25rem;
+  position: relative;
 }
 .brand {
   font-weight: 800;
   letter-spacing: 0.2px;
   color: #00ffc8;
   text-shadow: 0 0 10px rgba(0,255,200,0.25);
+  text-decoration: none;
 }
 
 /* Navigation */
@@ -35,6 +37,7 @@
   display: flex;
   gap: 1rem;
 }
+.nav.center { position: absolute; left: 50%; transform: translateX(-50%); }
 .nav a {
   color: #cfd3d6;
   text-decoration: none;
@@ -75,4 +78,14 @@
   border: 1px solid rgba(255,255,255,0.06);
   border-radius: 14px;
   box-shadow: 0 6px 30px rgba(0,0,0,0.35);
+}
+
+.nav-link {
+  display: block;
+  color: #cfd3d6;
+  text-decoration: none;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  transition: background .15s ease, color .15s ease;
+  cursor: pointer;
 }

@@ -3,15 +3,15 @@
     <div class="controls">
       <div class="field span-3">
         <label for="season">Saison</label>
-        <select id="season" [(ngModel)]="season" (change)="onSeasonChange()">
-          <option *ngFor="let y of seasons" [ngValue]="y" class="blackText">{{ y }}</option>
+  <select id="season" [(ngModel)]="season" (change)="onSeasonChange()" class="select select--dark border">
+          <option *ngFor="let y of seasons" [ngValue]="y">{{ y }}</option>
         </select>
       </div>
 
       <div class="field span-4" *ngIf="driverKeys.length">
         <label for="driver1">Fahrer 1</label>
-        <select id="driver1" [(ngModel)]="driver1">
-          <option *ngFor="let code of driverKeys" [ngValue]="code" class="blackText">
+  <select id="driver1" [(ngModel)]="driver1" class="select select--dark border">
+          <option *ngFor="let code of driverKeys" [ngValue]="code">
             {{ driverMap[code].full_name }} ({{ code }})
           </option>
         </select>
@@ -19,8 +19,8 @@
 
       <div class="field span-4" *ngIf="driverKeys.length">
         <label for="driver2">Fahrer 2</label>
-        <select id="driver2" [(ngModel)]="driver2">
-          <option *ngFor="let code of driverKeys" [ngValue]="code" class="blackText">
+  <select id="driver2" [(ngModel)]="driver2" class="select select--dark border">
+          <option *ngFor="let code of driverKeys" [ngValue]="code">
             {{ driverMap[code].full_name }} ({{ code }})
           </option>
         </select>
