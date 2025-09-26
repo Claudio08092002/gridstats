@@ -1,11 +1,18 @@
+import json
 import os
+import re
+import threading
+import time
+from pathlib import Path
 from typing import Any, Dict, List
 
 import fastf1
+import numpy as np
 import pandas as pd
 from fastapi import APIRouter, HTTPException
-import numpy as np
 from fastf1.ergast import Ergast, interface as ergast_interface
+
+from app.services.cache_utils import get_cache_dir
 
 # Ensure FastF1 cache is enabled (reuses same location as other routers)
 default_cache = "C:/Users/claud/.fastf1_cache" if os.name == "nt" else "/data/fastf1_cache"
@@ -18,10 +25,136 @@ router = APIRouter(prefix="/f1", tags=["fastf1-tracks"])
 # Simple in-process cache for track list to avoid repeated schedule scans on cold start
 _TRACK_CACHE: dict[str, Any] | None = None
 _TRACK_CACHE_YEARS: str | None = None
+_TRACK_CACHE_LOCK = threading.Lock()
+_TRACK_CACHE_BUILDERS: dict[str, threading.Thread] = {}
+TRACK_CACHE_TTL_SECONDS = int(os.getenv("TRACK_CACHE_TTL_SECONDS", "86400"))
+TRACK_CACHE_DIR = get_cache_dir(__file__)
 
 ERGAST_BASE_URL = os.getenv("ERGAST_BASE_URL", "https://api.jolpi.ca/ergast/f1")
 ergast_interface.BASE_URL = ERGAST_BASE_URL
 
+
+
+def _tracks_cache_path(years_env: str) -> Path:
+    slug = re.sub(r"[^0-9A-Za-z]+", "_", years_env) or "default"
+    return TRACK_CACHE_DIR / f"tracks_{slug}.json"
+
+
+def _load_tracks_from_disk(years_env: str) -> dict[str, Any] | None:
+    path = _tracks_cache_path(years_env)
+    if not path.exists():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    if not isinstance(payload, dict):
+        return None
+    return payload
+
+
+def _save_tracks_to_disk(years_env: str, payload: dict[str, Any]) -> None:
+    path = _tracks_cache_path(years_env)
+    path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+
+
+def _cache_is_fresh(cache: dict[str, Any]) -> bool:
+    if TRACK_CACHE_TTL_SECONDS <= 0:
+        return True
+    ts = cache.get("cached_at")
+    if not isinstance(ts, (int, float)):
+        return False
+    return (time.time() - ts) <= TRACK_CACHE_TTL_SECONDS
+
+
+def _parse_years(years_env: str) -> list[int]:
+    years: list[int] = []
+    try:
+        if "," in years_env:
+            years = [int(p) for p in years_env.split(",") if p.strip().isdigit()]
+        elif "-" in years_env:
+            a, b = years_env.split("-", 1)
+            ya, yb = int(a), int(b)
+            if ya > yb:
+                ya, yb = yb, ya
+            years = list(range(ya, yb + 1))
+        elif years_env:
+            years = [int(years_env)]
+    except Exception:
+        years = []
+    if not years:
+        years = list(range(2022, 2026))
+    years = [y for y in years if 2000 <= y <= 2100]
+    if not years:
+        years = [2024]
+    return years
+
+
+def _build_track_items(years: list[int]) -> List[Dict[str, Any]]:
+    seen_keys: dict[str, Dict[str, Any]] = {}
+    for year in years:
+        try:
+            schedule = fastf1.get_event_schedule(year, include_testing=False)
+        except Exception:
+            continue
+        if schedule is None or schedule.empty:
+            continue
+        for _, ev in schedule.iterrows():
+            rnd = ev.get("RoundNumber")
+            if pd.isna(rnd):
+                continue
+            try:
+                rnd_int = int(rnd)
+            except Exception:
+                continue
+            if rnd_int <= 0:
+                continue
+            circuit = _safe_str(ev.get("CircuitShortName")) or _safe_str(ev.get("Location"))
+            country = _safe_str(ev.get("Country"))
+            if not circuit and not country:
+                key = f"{year}-{rnd_int}"
+            else:
+                key = f"{circuit}|{country}".strip('|')
+            display_name = circuit or (_safe_str(ev.get("EventName")) or key)
+            prev = seen_keys.get(key)
+            if not prev or year > int(prev.get("year", 0)) or (year == int(prev.get("year", 0)) and rnd_int > int(prev.get("round", 0))):
+                seen_keys[key] = {
+                    "key": key,
+                    "name": display_name,
+                    "year": year,
+                    "round": rnd_int,
+                    "country": country,
+                    "location": _safe_str(ev.get("Location")),
+                }
+    items = list(seen_keys.values())
+    items.sort(key=lambda x: (x.get("name") or ""))
+    return items
+
+
+def _background_refresh(years_env: str, years: list[int]) -> None:
+    try:
+        items = _build_track_items(years)
+    except Exception:
+        return
+    cache = {"items": items, "cached_at": time.time()}
+    with TRACK_CACHE_LOCK:
+        global _TRACK_CACHE, _TRACK_CACHE_YEARS
+        _TRACK_CACHE = cache
+        _TRACK_CACHE_YEARS = years_env
+        try:
+            _save_tracks_to_disk(years_env, cache)
+        except Exception:
+            pass
+
+
+def _trigger_async_refresh(years_env: str, years: list[int]) -> None:
+    with TRACK_CACHE_LOCK:
+        existing = _TRACK_CACHE_BUILDERS.get(years_env)
+        if existing and existing.is_alive():
+            return
+        thread = threading.Thread(target=_background_refresh, args=(years_env, years), daemon=True)
+        _TRACK_CACHE_BUILDERS[years_env] = thread
+        thread.start()
 
 def _safe_str(val: Any) -> str:
     return "" if val is None or (isinstance(val, float) and pd.isna(val)) else str(val)
@@ -61,75 +194,45 @@ def list_tracks() -> List[Dict[str, Any]]:
       - "2019-2025" (inclusive range)
       - "2022" (single year)
       - "2018,2020,2024" (comma separated list)
-    Fallback default: 2018-2025.
-    Cached in-memory until process restart or different FASTF1_TRACK_YEARS value.
+    Fallback default: 2022-2025.
+    Cached in-memory and persisted to disk until refresh or process restart.
     """
     global _TRACK_CACHE, _TRACK_CACHE_YEARS
-    years_env = os.getenv("FASTF1_TRACK_YEARS", "2018-2025").strip()
+    years_env = os.getenv("FASTF1_TRACK_YEARS", "2022-2025").strip()
+    years = _parse_years(years_env)
+
+    cache = None
     if _TRACK_CACHE is not None and _TRACK_CACHE_YEARS == years_env:
-        return _TRACK_CACHE["items"]  # type: ignore
+        cache = _TRACK_CACHE
+    else:
+        cache = _load_tracks_from_disk(years_env)
+        if cache:
+            _TRACK_CACHE = cache
+            _TRACK_CACHE_YEARS = years_env
 
-    # Parse years spec
-    years: list[int] = []
+    if cache:
+        if not _cache_is_fresh(cache):
+            _trigger_async_refresh(years_env, years)
+        return list(cache.get("items", []))
+
     try:
-        if "," in years_env:
-            years = [int(p) for p in years_env.split(",") if p.strip().isdigit()]
-        elif "-" in years_env:
-            a, b = years_env.split("-", 1)
-            ya, yb = int(a), int(b)
-            if ya > yb:
-                ya, yb = yb, ya
-            years = list(range(ya, yb + 1))
-        else:
-            years = [int(years_env)]
-    except Exception:
-        years = list(range(2018, 2026))
-    if not years:
-        years = list(range(2018, 2026))
+        items = _build_track_items(years)
+    except Exception as exc:
+        disk_cache = _load_tracks_from_disk(years_env)
+        if disk_cache:
+            _TRACK_CACHE = disk_cache
+            _TRACK_CACHE_YEARS = years_env
+            return list(disk_cache.get("items", []))
+        raise HTTPException(status_code=503, detail="Track list unavailable") from exc
 
-    # Safety clamp
-    years = [y for y in years if 2000 <= y <= 2100]
-
-    seen_keys: dict[str, Dict[str, Any]] = {}
-    for year in years:
-        try:
-            schedule = fastf1.get_event_schedule(year, include_testing=False)
-        except Exception:
-            continue
-        if schedule is None or schedule.empty:
-            continue
-
-        for _, ev in schedule.iterrows():
-            rnd = ev.get("RoundNumber")
-            if pd.isna(rnd) or int(rnd) <= 0:
-                continue
-            rnd = int(rnd)
-            circuit = _safe_str(ev.get("CircuitShortName")) or _safe_str(ev.get("Location"))
-            country = _safe_str(ev.get("Country"))
-            if not circuit and not country:
-                key = f"{year}-{rnd}"
-            else:
-                key = f"{circuit}|{country}".strip('|')
-
-            # Build a display name that doesn't include the year
-            display_name = circuit or (_safe_str(ev.get("EventName")) or key)
-
-            prev = seen_keys.get(key)
-            # Keep the latest year/round for this circuit
-            if not prev or year > int(prev.get("year", 0)) or (year == int(prev.get("year", 0)) and rnd > int(prev.get("round", 0))):
-                seen_keys[key] = {
-                    "key": key,
-                    "name": display_name,
-                    "year": year,
-                    "round": rnd,
-                    "country": country,
-                    "location": _safe_str(ev.get("Location")),
-                }
-
-    items = list(seen_keys.values())
-    items.sort(key=lambda x: (x.get("name") or ""))
-    _TRACK_CACHE = {"items": items}
+    cache = {"items": items, "cached_at": time.time()}
+    _TRACK_CACHE = cache
     _TRACK_CACHE_YEARS = years_env
+    try:
+        _save_tracks_to_disk(years_env, cache)
+    except Exception:
+        pass
+
     return items
 
 
@@ -149,178 +252,56 @@ def get_track_map(year: int, round_number: int) -> Dict[str, Any]:
 
     def _build_from_session(ses) -> Dict[str, Any] | None:
         try:
-            # Preferred: use CircuitInfo centerline and corners (as shown in FastF1 docs)
             try:
                 ci = ses.get_circuit_info()
             except Exception:
                 ci = None
 
-            if ci is not None:
-                # Track rotation (degrees -> radians)
+            if ci is None:
                 try:
-                    track_angle = float(getattr(ci, "rotation", 0.0)) / 180.0 * float(np.pi)
+                    ses.load(laps=False, telemetry=False, weather=False, messages=False)
+                    ci = ses.get_circuit_info()
                 except Exception:
-                    track_angle = 0.0
-                center = None
-                # Try common attribute and method names
-                for attr in ("centerline", "center_line", "center"):
-                    try:
-                        df = getattr(ci, attr)
-                        if isinstance(df, pd.DataFrame) and not df.empty:
-                            center = df
-                            break
-                    except Exception:
-                        pass
-                if center is None and hasattr(ci, "get_centerline"):
-                    try:
-                        df = ci.get_centerline()
-                        if isinstance(df, pd.DataFrame) and not df.empty:
-                            center = df
-                    except Exception:
-                        center = None
+                    ci = None
 
-                if center is not None and {"X", "Y"}.issubset(set(center.columns)):
-                    cdf = center.copy()
-                    if "Distance" not in cdf.columns:
-                        dx = (cdf["X"].diff()**2 + cdf["Y"].diff()**2) ** 0.5
-                        cdf["Distance"] = dx.fillna(0).cumsum()
-                    track: List[Dict[str, Any]] = []
-                    zs = cdf["Z"] if "Z" in cdf.columns else pd.Series([None] * len(cdf))
-                    for x, y, z, d in zip(cdf["X"], cdf["Y"], zs, cdf["Distance"]):
-                        if pd.notna(x) and pd.notna(y):
-                            rx, ry = _rotate([float(x), float(y)], angle=track_angle)
-                            item = {"x": rx, "y": ry, "distance": float(d)}
-                            if z is not None and not (isinstance(z, float) and pd.isna(z)):
-                                try:
-                                    item["z"] = float(z)
-                                except Exception:
-                                    pass
-                            track.append(item)
-
-                    # Corners (if available)
-                    corners_out: List[Dict[str, Any]] = []
-                    corners_df = None
-                    try:
-                        df = getattr(ci, "corners")
-                        if isinstance(df, pd.DataFrame) and not df.empty:
-                            corners_df = df
-                    except Exception:
-                        corners_df = None
-                    if corners_df is not None and not corners_df.empty:
-                        # Use schema from FastF1 example
-                        offset_vector = [500.0, 0.0]
-                        for _, corner in corners_df.iterrows():
-                            try:
-                                num = corner.get("Number")
-                                letter = corner.get("Letter") if "Letter" in corners_df.columns else ""
-                                angle_deg = float(corner.get("Angle")) if "Angle" in corners_df.columns and pd.notna(corner.get("Angle")) else 0.0
-                                cx = float(corner.get("X"))
-                                cy = float(corner.get("Y"))
-                                name_val = corner.get("Name") if "Name" in corners_df.columns else corner.get("Description")
-                                corner_name = _safe_str(name_val)
-                                # Offset for readable label placement
-                                offset_angle = angle_deg / 180.0 * float(np.pi)
-                                offx, offy = _rotate(offset_vector, angle=offset_angle)
-                                text_x = cx + offx
-                                text_y = cy + offy
-                                # Rotate both label and track positions with track angle
-                                tx, ty = _rotate([text_x, text_y], angle=track_angle)
-                                px, py = _rotate([cx, cy], angle=track_angle)
-                                cnum = f"{int(num)}{str(letter) if letter is not None and not pd.isna(letter) else ''}" if num is not None and pd.notna(num) else ""
-                                corners_out.append({
-                                    "corner_number": cnum,
-                                    "corner_name": corner_name,
-                                    "text_position": [tx, ty],
-                                    "track_position": [px, py]
-                                })
-                            except Exception:
-                                continue
-
-                    return {"track": track, "corners": corners_out}
-
-            # If centerline is not available, try to load session data including telemetry for fallback
-            ses.load(laps=True, telemetry=True, weather=False, messages=False)
-
-            # Fallback: build from a fast lap's position data or telemetry
-            laps = ses.laps
-            if laps is None or laps.empty:
+            if ci is None:
                 return None
-            # Pick the fastest valid lap
-            try:
-                fastest = laps.pick_fastest()
-            except Exception:
-                fastest = None
-            if fastest is None or fastest.empty:
-                # fallback: take the first complete timed lap
-                timed = laps.dropna(subset=["LapTime"])
-                if timed is None or timed.empty:
-                    return None
-                fastest = timed.iloc[0]
 
-            # Use high-resolution position data (includes X, Y, Z)
-            pos = fastest.get_pos_data()
-            if pos is None or pos.empty:
-                # Fallback to telemetry if pos data is unavailable for this event
-                tel = fastest.get_telemetry()
-                if tel is None or tel.empty:
-                    return None
-                if hasattr(tel, "add_distance"):
-                    try:
-                        tel = tel.add_distance()
-                    except Exception:
-                        pass
-                # Ensure columns exist
-                if not {"X", "Y"}.issubset(set(tel.columns)):
-                    return None
-                # Rotation
+            try:
+                track_angle = float(getattr(ci, "rotation", 0.0)) / 180.0 * float(np.pi)
+            except Exception:
+                track_angle = 0.0
+
+            center = None
+            for attr in ("centerline", "center_line", "center"):
                 try:
-                    ci2 = ses.get_circuit_info()
-                    track_angle2 = float(getattr(ci2, "rotation", 0.0)) / 180.0 * float(np.pi)
-                except Exception:
-                    track_angle2 = 0.0
-                # Compute distance if missing
-                if "Distance" not in tel.columns:
-                    dx = (tel["X"].diff()**2 + tel["Y"].diff()**2) ** 0.5
-                    tel = tel.copy()
-                    tel["Distance"] = dx.fillna(0).cumsum()
-                # Build simple track
-                track = []
-                for x, y, d in zip(tel["X"], tel["Y"], tel["Distance"]):
-                    if pd.notna(x) and pd.notna(y):
-                        rx, ry = _rotate([float(x), float(y)], angle=track_angle2)
-                        track.append({"x": rx, "y": ry, "distance": float(d)})
-                return {"track": track, "corners": []}
-            # add distance if method exists
-            if hasattr(pos, "add_distance"):
-                try:
-                    pos = pos.add_distance()
+                    df = getattr(ci, attr)
+                    if isinstance(df, pd.DataFrame) and not df.empty:
+                        center = df
+                        break
                 except Exception:
                     pass
+            if center is None and hasattr(ci, "get_centerline"):
+                try:
+                    df = ci.get_centerline()
+                    if isinstance(df, pd.DataFrame) and not df.empty:
+                        center = df
+                except Exception:
+                    center = None
 
-            # Ensure at least X and Y exist; Z is optional
-            cols = set(pos.columns)
-            if not {"X", "Y"}.issubset(cols):
+            if center is None or not {"X", "Y"}.issubset(set(center.columns)):
                 return None
 
-            # Rotation
-            try:
-                ci3 = ses.get_circuit_info()
-                track_angle3 = float(getattr(ci3, "rotation", 0.0)) / 180.0 * float(np.pi)
-            except Exception:
-                track_angle3 = 0.0
+            cdf = center.copy()
+            if "Distance" not in cdf.columns:
+                dx = (cdf["X"].diff()**2 + cdf["Y"].diff()**2) ** 0.5
+                cdf["Distance"] = dx.fillna(0).cumsum()
 
-            # Compute distance if missing
-            if "Distance" not in pos.columns:
-                dx = (pos["X"].diff()**2 + pos["Y"].diff()**2) ** 0.5
-                pos = pos.copy()
-                pos["Distance"] = dx.fillna(0).cumsum()
-
-            # Build track array with optional Z
-            zs = pos["Z"] if "Z" in pos.columns else pd.Series([None] * len(pos))
-            track = []
-            for x, y, z, d in zip(pos["X"], pos["Y"], zs, pos["Distance"]):
+            track: List[Dict[str, Any]] = []
+            zs = cdf["Z"] if "Z" in cdf.columns else pd.Series([None] * len(cdf))
+            for x, y, z, d in zip(cdf["X"], cdf["Y"], zs, cdf["Distance"]):
                 if pd.notna(x) and pd.notna(y):
-                    rx, ry = _rotate([float(x), float(y)], angle=track_angle3)
+                    rx, ry = _rotate([float(x), float(y)], angle=track_angle)
                     item = {"x": rx, "y": ry, "distance": float(d)}
                     if z is not None and not (isinstance(z, float) and pd.isna(z)):
                         try:
@@ -329,8 +310,42 @@ def get_track_map(year: int, round_number: int) -> Dict[str, Any]:
                             pass
                     track.append(item)
 
-            # Corners enhancement can be added later; for now keep empty list
-            return {"track": track, "corners": []}
+            corners_out: List[Dict[str, Any]] = []
+            corners_df = None
+            try:
+                df = getattr(ci, "corners")
+                if isinstance(df, pd.DataFrame) and not df.empty:
+                    corners_df = df
+            except Exception:
+                corners_df = None
+            if corners_df is not None and not corners_df.empty:
+                offset_vector = [500.0, 0.0]
+                for _, corner in corners_df.iterrows():
+                    try:
+                        num = corner.get("Number")
+                        letter = corner.get("Letter") if "Letter" in corners_df.columns else ""
+                        angle_deg = float(corner.get("Angle")) if "Angle" in corners_df.columns and pd.notna(corner.get("Angle")) else 0.0
+                        cx = float(corner.get("X"))
+                        cy = float(corner.get("Y"))
+                        name_val = corner.get("Name") if "Name" in corners_df.columns else corner.get("Description")
+                        corner_name = _safe_str(name_val)
+                        offset_angle = angle_deg / 180.0 * float(np.pi)
+                        offx, offy = _rotate(offset_vector, angle=offset_angle)
+                        text_x = cx + offx
+                        text_y = cy + offy
+                        tx, ty = _rotate([text_x, text_y], angle=track_angle)
+                        px, py = _rotate([cx, cy], angle=track_angle)
+                        cnum = f"{int(num)}{str(letter) if letter is not None and not pd.isna(letter) else ''}" if num is not None and pd.notna(num) else ""
+                        corners_out.append({
+                            "corner_number": cnum,
+                            "corner_name": corner_name,
+                            "text_position": [tx, ty],
+                            "track_position": [px, py]
+                        })
+                    except Exception:
+                        continue
+
+            return {"track": track, "corners": corners_out}
         except Exception:
             return None
 
@@ -517,3 +532,6 @@ def get_track_map(year: int, round_number: int) -> Dict[str, Any]:
     winner_info = _get_race_winner(source_year, source_round, winner_names)
     data["winner"] = winner_info
     return data
+
+
+
