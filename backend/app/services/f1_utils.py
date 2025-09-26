@@ -52,6 +52,47 @@ def _norm_abbreviation(df: pd.DataFrame, ses) -> pd.DataFrame:
     df["Abbreviation"] = None
     return df
 
+
+def _enrich_from_source(base: pd.DataFrame, source: pd.DataFrame | None) -> pd.DataFrame:
+    if source is None or source.empty:
+        return base
+    join_cols: list[str] = []
+    if "Abbreviation" in base.columns and "Abbreviation" in source.columns:
+        join_cols.append("Abbreviation")
+    if not join_cols and "DriverNumber" in base.columns and "DriverNumber" in source.columns:
+        join_cols.append("DriverNumber")
+    if not join_cols:
+        return base
+
+    desired_cols = [
+        "Status",
+        "GridPosition",
+        "TeamName",
+        "ConstructorName",
+        "TeamColor",
+        "FullName",
+        "BroadcastName",
+        "Driver",
+        "DriverNumber",
+    ]
+    avail_cols = [c for c in desired_cols if c in source.columns]
+    if not avail_cols:
+        return base
+
+    extras = source[join_cols + avail_cols].drop_duplicates(subset=join_cols)
+    merged = base.merge(extras, on=join_cols, how="left", suffixes=("", "__src"))
+
+    for col in avail_cols:
+        src_col = f"{col}__src"
+        if src_col not in merged.columns:
+            continue
+        if col in merged.columns:
+            merged[col] = merged[col].combine_first(merged[src_col])
+            merged = merged.drop(columns=[src_col])
+        else:
+            merged.rename(columns={src_col: col}, inplace=True)
+    return merged
+
 def load_results_strict(year: int, round_number: int) -> Tuple[str, pd.DataFrame]:
     """
     Robust:
@@ -92,11 +133,13 @@ def load_results_strict(year: int, round_number: int) -> Tuple[str, pd.DataFrame
 
     # 2a) wenn FastF1 schon gültige Punkte hat -> nimm F1
     if f1 is not None and has_points(f1):
-        return "fastf1", f1
+        enriched = _enrich_from_source(f1, er)
+        return "fastf1", enriched
 
     # 2b) sonst wenn Ergast Punkte hat -> nimm Ergast
     if er is not None and has_points(er):
-        return "ergast", er
+        enriched = _enrich_from_source(er, f1)
+        return "ergast", enriched
 
     # 2c) wenn F1 Positionen hat, aber Points leer: versuche Points aus Ergast zu mergen
     if f1 is not None and has_positions(f1) and er is not None:
@@ -113,6 +156,8 @@ def load_results_strict(year: int, round_number: int) -> Tuple[str, pd.DataFrame
                 merged["Points"] = merged["Points"].fillna(merged["Points_er"])
                 merged = merged.drop(columns=["Points_er"])
             merged["Points"] = pd.to_numeric(merged["Points"], errors="coerce").fillna(0)
+            merged = _enrich_from_source(merged, er)
+            merged = _enrich_from_source(merged, f1)
             return "f1+ergast_points", merged
 
     # 3) Notlösung: Laps ableiten
@@ -134,4 +179,6 @@ def load_results_strict(year: int, round_number: int) -> Tuple[str, pd.DataFrame
         "Position": df["ProvisionalPosition"],
         "Points": df["ProvisionalPoints"],
     })
+    df_res = _enrich_from_source(df_res, er)
+    df_res = _enrich_from_source(df_res, f1)
     return "derived", df_res

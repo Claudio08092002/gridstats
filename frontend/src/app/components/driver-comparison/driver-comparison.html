@@ -4,15 +4,15 @@
       <div class="field span-3">
         <label for="season">Saison</label>
         <select id="season" [(ngModel)]="season" (change)="onSeasonChange()">
-          <option *ngFor="let y of seasons" [ngValue]="y">{{ y }}</option>
+          <option *ngFor="let y of seasons" [ngValue]="y" class="blackText">{{ y }}</option>
         </select>
       </div>
 
       <div class="field span-4" *ngIf="driverKeys.length">
         <label for="driver1">Fahrer 1</label>
         <select id="driver1" [(ngModel)]="driver1">
-          <option *ngFor="let code of driverKeys" [ngValue]="code">
-            {{ driverMap[code].name }} ({{ code }})
+          <option *ngFor="let code of driverKeys" [ngValue]="code" class="blackText">
+            {{ driverMap[code].full_name }} ({{ code }})
           </option>
         </select>
       </div>
@@ -20,8 +20,8 @@
       <div class="field span-4" *ngIf="driverKeys.length">
         <label for="driver2">Fahrer 2</label>
         <select id="driver2" [(ngModel)]="driver2">
-          <option *ngFor="let code of driverKeys" [ngValue]="code">
-            {{ driverMap[code].name }} ({{ code }})
+          <option *ngFor="let code of driverKeys" [ngValue]="code" class="blackText">
+            {{ driverMap[code].full_name }} ({{ code }})
           </option>
         </select>
       </div>
@@ -32,8 +32,8 @@
     </div>
 
     <div class="legend" *ngIf="compared && driver1 && driver2">
-      <span><span class="dot" [style.background]="color1"></span>{{ driverMap[driver1].name }}</span>
-      <span><span class="dot" [style.background]="color2"></span>{{ driverMap[driver2].name }}</span>
+      <span><span class="dot" [style.background]="color1"></span>{{ driverMap[driver1].full_name }}</span>
+      <span><span class="dot" [style.background]="color2"></span>{{ driverMap[driver2].full_name }}</span>
     </div>
 
     <!-- Einzel-Charts nebeneinander -->

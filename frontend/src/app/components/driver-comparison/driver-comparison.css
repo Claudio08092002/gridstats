@@ -3,8 +3,8 @@
   --panel: #12161f;
   --muted: #7d8596;
   --text: #e6edf3;
-  --accent: #6ea8fe;
-  --accent-2: #f778ba;
+  --accent: #38bdf8;
+  --accent-2: #f97316;
   --ring: #2a3548;
 }
 
@@ -60,7 +60,7 @@ select {
 }
 select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(110, 168, 254, 0.2);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
 }
 
 .actions { display: flex; gap: 12px; align-items: end; }
@@ -146,3 +146,8 @@ canvas {
   text-align: center; color: var(--muted);
   font-size: 13px; padding: 22px 0 4px;
 }
+
+.blackText {
+  color: black !important;
+}
+

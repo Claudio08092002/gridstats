@@ -49,8 +49,9 @@ export class DriverComparison implements OnDestroy {
 
   compared = false;
 
-  color1 = '#6ea8fe';
-  color2 = '#f778ba';
+  private readonly neutralColors = ['#cbd5f5', '#64748b'];
+  color1 = this.neutralColors[0];
+  color2 = this.neutralColors[1];
 
   ngOnDestroy(): void {
     this.chart?.destroy();
@@ -80,6 +81,24 @@ export class DriverComparison implements OnDestroy {
         this.loading = false;
         this.driverMap = resp.drivers ?? {};
         this.driverKeys = Object.keys(this.driverMap).sort();
+        console.log('Loaded drivers:', this.driverKeys);
+        console.log(this.driverMap);
+
+        // If backend served an empty cached season, try once with refresh=true to rebuild
+        if (this.driverKeys.length === 0) {
+          this.loading = true;
+          this.api.loadSeason(this.season!, true).subscribe({
+            next: (fresh: SeasonResponse) => {
+              this.loading = false;
+              this.driverMap = fresh.drivers ?? {};
+              this.driverKeys = Object.keys(this.driverMap).sort();
+            },
+            error: (err) => {
+              this.loading = false;
+              this.errorMsg = err?.error?.detail ?? err.message ?? 'Fehler';
+            },
+          });
+        }
       },
       error: (err) => {
         this.loading = false;
@@ -108,21 +127,83 @@ export class DriverComparison implements OnDestroy {
     };
   }
 
-  private makeBar(ctx: CanvasRenderingContext2D, title: string, d1: number, d2: number) {
+  private normalizeHex(hex?: string | null): string | null {
+    if (!hex) return null;
+    let value = hex.trim();
+    if (!value) return null;
+    if (!value.startsWith('#')) {
+      value = `#${value}`;
+    }
+    if (value.length === 4) {
+      value = `#${value[1]}${value[1]}${value[2]}${value[2]}${value[3]}${value[3]}`;
+    }
+    return value.length === 7 ? value.toUpperCase() : null;
+  }
+
+  private adjustColor(hex: string, amount: number): string {
+    const normalized = this.normalizeHex(hex) ?? this.neutralColors[0];
+    const r = parseInt(normalized.slice(1, 3), 16);
+    const g = parseInt(normalized.slice(3, 5), 16);
+    const b = parseInt(normalized.slice(5, 7), 16);
+    const adjust = (channel: number) => {
+      if (amount >= 0) {
+        return Math.min(255, Math.round(channel + (255 - channel) * amount));
+      }
+      return Math.max(0, Math.round(channel * (1 + amount)));
+    };
+    const r2 = adjust(r);
+    const g2 = adjust(g);
+    const b2 = adjust(b);
+    return `#${r2.toString(16).padStart(2, '0')}${g2.toString(16).padStart(2, '0')}${b2.toString(16).padStart(2, '0')}`.toUpperCase();
+  }
+
+  private deriveDriverColors(d1: DriverSummary, d2: DriverSummary) {
+    const colorOne = this.normalizeHex(d1.team_color);
+    const colorTwo = this.normalizeHex(d2.team_color);
+    const sameTeam = d1.team && d2.team && d1.team === d2.team;
+
+    if (sameTeam && colorOne) {
+      this.color1 = this.adjustColor(colorOne, 0.25);
+      this.color2 = this.adjustColor(colorOne, -0.2);
+      return;
+    }
+
+    if (colorOne && colorTwo) {
+      this.color1 = colorOne;
+      this.color2 = colorTwo !== colorOne ? colorTwo : this.adjustColor(colorTwo, -0.25);
+      return;
+    }
+
+    if (colorOne) {
+      this.color1 = colorOne;
+      this.color2 = this.adjustColor(colorOne, -0.3);
+      return;
+    }
+
+    if (colorTwo) {
+      this.color2 = colorTwo;
+      this.color1 = this.adjustColor(colorTwo, 0.3);
+      return;
+    }
+
+    [this.color1, this.color2] = this.neutralColors;
+  }
+
+  private makeBar(ctx: CanvasRenderingContext2D, title: string, d1: number, d2: number, label1: string, label2: string) {
     const cfg: ChartConfiguration<'bar'> = {
       type: 'bar',
       data: {
         labels: [title],
         datasets: [
           {
-            label: `${this.driver1}`,
+            label: label1,
             data: [Number(d1 ?? 0)],
             backgroundColor: this.color1,
             barPercentage: 0.55,
             categoryPercentage: 0.55,
           },
           {
-            label: `${this.driver2}`,
+            label: label2,
             data: [Number(d2 ?? 0)],
             backgroundColor: this.color2,
             barPercentage: 0.55,
@@ -150,6 +231,8 @@ export class DriverComparison implements OnDestroy {
     const d2 = this.driverMap[this.driver2];
     if (!d1 || !d2) return;
 
+  this.deriveDriverColors(d1, d2);
+
     const labels = ['Punkte', 'Siege', 'Poles', 'Podien', 'Ø Ziel'];
     const d1Data = [d1.total_points, d1.wins, d1.poles, d1.podiums, d1.avg_finish ?? 0] as number[];
     const d2Data = [d2.total_points, d2.wins, d2.poles, d2.podiums, d2.avg_finish ?? 0] as number[];
@@ -164,20 +247,22 @@ export class DriverComparison implements OnDestroy {
       this.chart?.destroy();
       const ctxMain = this.getCtx(this.chartCanvas);
       if (this.isBrowser && ctxMain) {
+        const d1Label = d1.full_name;
+        const d2Label = d2.full_name;
         const cfg: ChartConfiguration<'bar'> = {
           type: 'bar',
           data: {
             labels,
             datasets: [
               {
-                label: `${d1.name} (${this.driver1})`,
+                label: `${d1Label} (${this.driver1})`,
                 data: d1Data,
                 backgroundColor: this.color1,
                 barPercentage: 0.5,
                 categoryPercentage: 0.5,
               },
               {
-                label: `${d2.name} (${this.driver2})`,
+                label: `${d2Label} (${this.driver2})`,
                 data: d2Data,
                 backgroundColor: this.color2,
                 barPercentage: 0.5,
@@ -202,12 +287,12 @@ export class DriverComparison implements OnDestroy {
       const ctxDnfs   = this.getCtx(this.dnfsChart);
 
 
-      if (ctxPoints)  this.makeBar(ctxPoints,  'Punkte', d1.total_points,    d2.total_points);
-      if (ctxWins)    this.makeBar(ctxWins,    'Siege',  d1.wins,            d2.wins);
-      if (ctxPodiums) this.makeBar(ctxPodiums, 'Podien', d1.podiums,         d2.podiums);
-      if (ctxPoles)   this.makeBar(ctxPoles,   'Poles',  d1.poles,           d2.poles);
-      if (ctxAvg)     this.makeBar(ctxAvg,     'Ø Ziel', d1.avg_finish ?? 0, d2.avg_finish ?? 0);
-      if (ctxDnfs)    this.makeBar(ctxDnfs,    'Dnfs',   d1.dnfs,            d2.dnfs);
+      if (ctxPoints)  this.makeBar(ctxPoints,  'Punkte', d1.total_points,    d2.total_points, d1.code, d2.code);
+      if (ctxWins)    this.makeBar(ctxWins,    'Siege',  d1.wins,            d2.wins,        d1.code, d2.code);
+      if (ctxPodiums) this.makeBar(ctxPodiums, 'Podien', d1.podiums,         d2.podiums,     d1.code, d2.code);
+      if (ctxPoles)   this.makeBar(ctxPoles,   'Poles',  d1.poles,           d2.poles,       d1.code, d2.code);
+      if (ctxAvg)     this.makeBar(ctxAvg,     'Ø Ziel', d1.avg_finish ?? 0, d2.avg_finish ?? 0, d1.code, d2.code);
+      if (ctxDnfs)    this.makeBar(ctxDnfs,    'Dnfs',   d1.dnfs,            d2.dnfs,        d1.code, d2.code);
 
     });
   }
