@@ -5,6 +5,7 @@ import fastf1
 import pandas as pd
 from fastapi import APIRouter, HTTPException
 import numpy as np
+from fastf1.ergast import Ergast, interface as ergast_interface
 
 # Ensure FastF1 cache is enabled (reuses same location as other routers)
 default_cache = "C:/Users/claud/.fastf1_cache" if os.name == "nt" else "/data/fastf1_cache"
@@ -14,9 +15,38 @@ fastf1.Cache.enable_cache(cache_dir)
 
 router = APIRouter(prefix="/f1", tags=["fastf1-tracks"])
 
+ERGAST_BASE_URL = os.getenv("ERGAST_BASE_URL", "https://api.jolpi.ca/ergast/f1")
+ergast_interface.BASE_URL = ERGAST_BASE_URL
+
 
 def _safe_str(val: Any) -> str:
     return "" if val is None or (isinstance(val, float) and pd.isna(val)) else str(val)
+
+
+def _ergast_to_dataframe(resp: Any) -> pd.DataFrame | None:
+    if resp is None:
+        return None
+    if isinstance(resp, pd.DataFrame):
+        return resp
+    content = getattr(resp, "content", None)
+    if not content:
+        return None
+    frames: list[pd.DataFrame] = []
+    for item in content:
+        if item is None:
+            continue
+        if isinstance(item, pd.DataFrame):
+            frames.append(item)
+        else:
+            try:
+                frames.append(pd.DataFrame(item))
+            except Exception:
+                continue
+    if not frames:
+        return None
+    if len(frames) == 1:
+        return frames[0].copy()
+    return pd.concat(frames, ignore_index=True, copy=False)
 
 
 @router.get("/tracks")
@@ -316,61 +346,56 @@ def get_track_map(year: int, round_number: int) -> Dict[str, Any]:
         return None
 
     def _get_race_winner(y: int, r: int, names: List[str] | None = None) -> Dict[str, Any] | None:
-        identifiers: List[Any] = []
-        if r is not None and not pd.isna(r):
-            identifiers.append(r)
-        if names:
-            identifiers.extend([nm for nm in names if nm])
+        if r is None or pd.isna(r):
+            return None
+        try:
+            ergast = Ergast()
+            resp = ergast.get_race_results(season=int(y), round=int(r))
+        except Exception:
+            resp = None
+        df = _ergast_to_dataframe(resp)
+        if df is None or df.empty:
+            return None
 
-        seen: set[Any] = set()
-        for identifier in identifiers:
-            if identifier in seen:
-                continue
-            seen.add(identifier)
-            try:
-                ses_race = fastf1.get_session(y, identifier, "R")
-            except Exception:
-                continue
-            try:
-                ses_race.load(laps=False, telemetry=False, weather=False, messages=False)
-            except Exception:
-                continue
-            results = getattr(ses_race, "results", None)
-            if results is None or results.empty:
-                continue
+        df = df.copy()
+        winner_row = None
+        if "position" in df.columns:
+            df["position"] = pd.to_numeric(df["position"], errors="coerce")
+            pos_match = df[df["position"] == 1]
+            if pos_match is not None and not pos_match.empty:
+                winner_row = pos_match.iloc[0]
+        if winner_row is None:
+            winner_row = df.iloc[0]
 
-            winner = results.iloc[0]
-            driver = _safe_str(winner.get("FullName")) or _safe_str(winner.get("BroadcastName")) or _safe_str(winner.get("Driver")) or _safe_str(winner.get("DriverNumber"))
-            team = _safe_str(winner.get("TeamName")) or _safe_str(winner.get("ConstructorName"))
-            code = _safe_str(winner.get("Abbreviation")) or _safe_str(winner.get("DriverNumber"))
+        given = _safe_str(winner_row.get("driverGivenName"))
+        family = _safe_str(winner_row.get("driverFamilyName"))
+        driver = " ".join(part for part in [given, family] if part).strip()
+        if not driver:
+            driver = _safe_str(winner_row.get("driverFullName")) or _safe_str(winner_row.get("driverSurname")) or _safe_str(winner_row.get("driverId"))
 
-            event = getattr(ses_race, "event", None)
-            if event is not None:
-                try:
-                    year_val = int(getattr(event, "year", y) or y)
-                except Exception:
-                    year_val = y
-                round_candidate = getattr(event, "RoundNumber", None) or getattr(event, "round", None)
-                try:
-                    round_val = int(round_candidate) if round_candidate is not None and not pd.isna(round_candidate) else r
-                except Exception:
-                    round_val = r
-                event_name = _safe_str(getattr(event, "EventName", ""))
-            else:
-                year_val = y
-                round_val = r
-                event_name = ""
+        team = _safe_str(winner_row.get("constructorName")) or _safe_str(winner_row.get("ConstructorName"))
+        code = _safe_str(winner_row.get("driverCode")) or _safe_str(winner_row.get("driverId"))
+        event_name = _safe_str(winner_row.get("raceName"))
+        if not event_name and names:
+            event_name = next((nm for nm in names if nm), "")
 
-            return {
-                "year": year_val,
-                "round": round_val,
-                "driver": driver,
-                "team": team,
-                "code": code,
-                "event": event_name,
-            }
+        try:
+            year_val = int(winner_row.get("season", y))
+        except Exception:
+            year_val = y
+        try:
+            round_val = int(winner_row.get("round", r))
+        except Exception:
+            round_val = r
 
-        return None
+        return {
+            "year": year_val,
+            "round": round_val,
+            "driver": driver or code,
+            "team": team,
+            "code": code,
+            "event": event_name,
+        }
 
     # Build candidate names for this round (venue/circuit/event), improves odds vs round number only
     name_candidates: List[str] = []
