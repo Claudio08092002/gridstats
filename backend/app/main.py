@@ -5,18 +5,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import compare, track
 
-
-ALLOWED_ORIGINS = [
-    "http://localhost:4200",
-    "https://claudio.stefanhohl.ch",
-]
-ALLOWED_ORIGIN_REGEX = r"^https://(?:.+\.)?stefanhohl\.ch$"
+# (Logging removed as requested) 
 
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_origin_regex=ALLOWED_ORIGIN_REGEX,
+    allow_origins=[
+        "http://localhost:4200",
+        "https://claudio.stefanhohl.ch",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
