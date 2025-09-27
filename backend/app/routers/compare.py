@@ -25,8 +25,12 @@ cache_dir = os.getenv("FASTF1_CACHE", default_cache)
 os.makedirs(cache_dir, exist_ok=True)
 fastf1.Cache.enable_cache(cache_dir)
 
-ERGAST_BASE_URL = os.getenv("ERGAST_BASE_URL", "https://api.jolpi.ca/ergast/f1")
-ergast_interface.BASE_URL = ERGAST_BASE_URL
+# Nutze den FastF1-Default für Ergast, außer eine Env-Var erzwingt etwas anderes.
+ERGAST_BASE_URL = os.getenv("ERGAST_BASE_URL")
+if ERGAST_BASE_URL:
+    ergast_interface.BASE_URL = ERGAST_BASE_URL
+
+
 
 def _load_from_cache(year: int) -> Dict[str, Any] | None:
     return cache_load(__file__, year)

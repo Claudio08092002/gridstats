@@ -1,22 +1,29 @@
+# backend/app/services/cache_utils.py
+
 from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict
 import json
+import os
 
-
-def get_cache_dir(router_file: str) -> Path:
-    """Resolve season cache folder relative to router/services package.
-    router_file: pass __file__ from the caller module.
-    """
-    base = Path(router_file).resolve().parent.parent
-    p = base / "season_cache"
+# Wurzelordner für Season-JSONs ermitteln
+def season_cache_root(router_file: str) -> Path:
+    # Optional per Env überschreibbar (wird in deinem Compose bereits gemountet)
+    env_dir = os.getenv("SEASON_CACHE_DIR")
+    if env_dir:
+        p = Path(env_dir)
+    else:
+        # Default: <backend/app/>/season_cache
+        p = Path(router_file).resolve().parent.parent / "season_cache"
     p.mkdir(parents=True, exist_ok=True)
     return p
 
+def get_cache_dir(router_file: str) -> Path:
+    # Alias für bestehenden Code, der get_cache_dir verwendet
+    return season_cache_root(router_file)
 
 def season_cache_path(router_file: str, year: int) -> Path:
-    return get_cache_dir(router_file) / f"season_{year}.json"
-
+    return season_cache_root(router_file) / f"season_{year}.json"
 
 def load_season(router_file: str, year: int) -> Dict[str, Any] | None:
     p = season_cache_path(router_file, year)
@@ -27,7 +34,8 @@ def load_season(router_file: str, year: int) -> Dict[str, Any] | None:
             return None
     return None
 
-
 def save_season(router_file: str, year: int, payload: Dict[str, Any]) -> None:
     p = season_cache_path(router_file, year)
-    p.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    tmp = p.with_suffix(".tmp")
+    tmp.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    tmp.replace(p)
