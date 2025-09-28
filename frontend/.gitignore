@@ -21,6 +21,9 @@ yarn-error.log
 *.sublime-workspace
 *.pyc
 
+# season_cache
+/backend/app/season_cache/*
+
 # Visual Studio Code
 .vscode/*
 !.vscode/settings.json
