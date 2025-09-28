@@ -374,7 +374,10 @@ def load_season(year: int, response: Response, refresh: bool = False, debug_driv
         if not refresh:
             cached = _load_from_cache(year)
             if cached and isinstance(cached, dict):
-                if cached.get("schema_version") == SCHEMA_VERSION and cached.get("drivers"):
+                # Accept old caches that lack schema_version but have drivers
+                if cached.get("drivers"):
+                    if cached.get("schema_version") != SCHEMA_VERSION:
+                        cached["schema_version"] = SCHEMA_VERSION  # migrate old format
                     _mem_put(year, cached)
                     response.headers["Cache-Control"] = "public, max-age=86400"
                     response.headers["X-Season-Cache"] = "disk"
