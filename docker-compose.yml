@@ -8,6 +8,10 @@ services:
       - FASTF1_CACHE=/data/fastf1_cache
       - UVICORN_HOST=0.0.0.0
       - UVICORN_PORT=8000
+      - PREWARM_SEASONS=2024,2025
+      - ENABLE_SPRINT_POINTS=1
+      - SEASON_MEM_TTL=21600
+
     volumes:
       - fastf1_cache:/data/fastf1_cache
       - season_cache:/app/app/season_cache

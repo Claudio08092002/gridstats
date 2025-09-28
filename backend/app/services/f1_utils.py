@@ -3,6 +3,16 @@ import pandas as pd
 import os
 import fastf1
 
+def get_session_prefer_fastf1(year: int, round_number: int, code: str):
+    """Return a session preferring fastf1 backend, falling back to ergast.
+    Does not load the session; caller must call .load().
+    """
+    try:
+        return fastf1.get_session(year, round_number, code, backend="fastf1")
+    except Exception:
+        # Fallback to ergast if fastf1 session construction fails early
+        return fastf1.get_session(year, round_number, code, backend="ergast")
+
 # Default je nach Betriebssystem
 default_cache = (
     "C:/Users/claud/.fastf1_cache" if os.name == "nt" else "/data/fastf1_cache"
@@ -159,7 +169,7 @@ def load_results_strict(year: int, round_number: int) -> Tuple[str, pd.DataFrame
     Rückgabe: (source, DataFrame mit Abbreviation, Position, Points[, evtl. Name/Team/Status])
     """
     # 1) FastF1 Results
-    ses_f1 = fastf1.get_session(year, round_number, "R", backend="fastf1")
+    ses_f1 = get_session_prefer_fastf1(year, round_number, "R")
     ses_f1.load(laps=False, telemetry=False, weather=False, messages=False)
     f1 = ses_f1.results.copy() if ses_f1.results is not None else None
     if f1 is not None and not f1.empty:
@@ -171,6 +181,7 @@ def load_results_strict(year: int, round_number: int) -> Tuple[str, pd.DataFrame
     er = None
     try:
         with fastf1.Cache.disabled():
+            # Build explicit ergast session for fallback points info
             ses_er = fastf1.get_session(year, round_number, "R", backend="ergast")
             ses_er.load(laps=False, telemetry=False, weather=False, messages=False)
             er = ses_er.results.copy() if ses_er.results is not None else None
@@ -223,7 +234,7 @@ def load_results_strict(year: int, round_number: int) -> Tuple[str, pd.DataFrame
             return "f1+ergast_points", merged
 
     # 3) Notlösung: Laps ableiten
-    ses3 = fastf1.get_session(year, round_number, "R", backend="fastf1")
+    ses3 = get_session_prefer_fastf1(year, round_number, "R")
     ses3.load(laps=True, telemetry=False, weather=False, messages=False)
     laps = ses3.laps
     if laps is None or laps.empty:
