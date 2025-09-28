@@ -21,6 +21,45 @@ _TRACK_CACHE_YEARS: str | None = None
 
 ERGAST_BASE_URL = os.getenv("ERGAST_BASE_URL", "https://api.jolpi.ca/ergast/f1")
 ergast_interface.BASE_URL = ERGAST_BASE_URL
+FORCE_ERGAST = os.getenv("FORCE_ERGAST", "").lower() in ("1", "true", "yes")
+print(f"[startup][track] cache_dir={cache_dir} ergast_base={ERGAST_BASE_URL} force_ergast={FORCE_ERGAST}")
+
+def _build_fallback_schedule(year: int) -> pd.DataFrame:
+    rows: list[dict[str, Any]] = []
+    consecutive_misses = 0
+    for rnd in range(1, 40):
+        try:
+            ses = fastf1.get_session(year, rnd, "R", backend="fastf1")
+            ses.load(laps=False, telemetry=False, weather=False, messages=False)
+            ev = getattr(ses, "event", None)
+            ev_name = None
+            if ev is not None:
+                for attr in ("EventName", "OfficialEventName", "Name"):
+                    ev_name = getattr(ev, attr, None) or ev_name
+            ev_name = ev_name or f"Round {rnd}"
+            rows.append({"RoundNumber": rnd, "EventName": ev_name})
+            consecutive_misses = 0
+        except Exception:
+            consecutive_misses += 1
+            if rows and consecutive_misses >= 3:
+                break
+            continue
+    if rows:
+        print(f"[schedule][fallback][track] synthesized schedule year={year} rows={len(rows)}")
+        return pd.DataFrame(rows)
+    return pd.DataFrame()
+
+def _load_schedule_with_fallback(year: int) -> pd.DataFrame:
+    try:
+        if FORCE_ERGAST:
+            print(f"[schedule][track] FORCE_ERGAST flag set – attempting default schedule call year={year}")
+        sched = fastf1.get_event_schedule(year, include_testing=False)
+        if sched is not None and not sched.empty:
+            return sched
+        print(f"[schedule][track] primary schedule empty year={year}; using fallback")
+    except Exception as e:
+        print(f"[schedule][track] primary schedule exception year={year}: {e}")
+    return _build_fallback_schedule(year)
 
 
 def _safe_str(val: Any) -> str:
@@ -93,7 +132,7 @@ def list_tracks() -> List[Dict[str, Any]]:
     seen_keys: dict[str, Dict[str, Any]] = {}
     for year in years:
         try:
-            schedule = fastf1.get_event_schedule(year, include_testing=False)
+            schedule = _load_schedule_with_fallback(year)
         except Exception:
             continue
         if schedule is None or schedule.empty:

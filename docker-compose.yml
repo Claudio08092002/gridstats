@@ -11,6 +11,8 @@ services:
       - PREWARM_SEASONS=2024,2025
       - ENABLE_SPRINT_POINTS=1
       - SEASON_MEM_TTL=21600
+      - ERGAST_BASE_URL=https://ergast.com/api/f1
+      - FORCE_ERGAST=0
 
     volumes:
       - fastf1_cache:/data/fastf1_cache

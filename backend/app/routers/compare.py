@@ -27,6 +27,11 @@ fastf1.Cache.enable_cache(cache_dir)
 ERGAST_BASE_URL = os.getenv("ERGAST_BASE_URL", "https://api.jolpi.ca/ergast/f1")
 ergast_interface.BASE_URL = ERGAST_BASE_URL
 
+# Optional force ergast (skip first F1 API attempt semantics – we still call the generic
+# API but expose intent in logging and provide a manual fallback path if schedule empty)
+FORCE_ERGAST = os.getenv("FORCE_ERGAST", "").lower() in ("1", "true", "yes")
+print(f"[startup][compare] cache_dir={cache_dir} ergast_base={ERGAST_BASE_URL} force_ergast={FORCE_ERGAST}")
+
 def _load_from_cache(year: int) -> Dict[str, Any] | None:
     return cache_load(__file__, year)
 
@@ -286,6 +291,52 @@ def _detect_sprint_rounds(year: int) -> List[int]:
     _SPRINT_ROUNDS_CACHE[year] = rounds
     return rounds
 
+# ---- Schedule loader with fallback -----------------------------------------
+def _build_fallback_schedule(year: int) -> pd.DataFrame:
+    """Attempt to synthesize a minimal schedule by probing race sessions.
+    This is a last-resort path if the normal fastf1 schedule retrieval failed.
+    Only includes RoundNumber and EventName columns (others omitted)."""
+    rows: list[dict[str, Any]] = []
+    consecutive_misses = 0
+    for rnd in range(1, 40):  # generous upper bound
+        try:
+            ses = fastf1.get_session(year, rnd, "R", backend="fastf1")
+            ses.load(laps=False, telemetry=False, weather=False, messages=False)
+            ev = getattr(ses, "event", None)
+            ev_name = None
+            if ev is not None:
+                for attr in ("EventName", "OfficialEventName", "Name"):
+                    ev_name = getattr(ev, attr, None) or ev_name
+            ev_name = ev_name or f"Round {rnd}"
+            rows.append({"RoundNumber": rnd, "EventName": ev_name})
+            consecutive_misses = 0
+        except Exception:
+            consecutive_misses += 1
+            # Heuristic: if we've already found some rounds and hit 3 consecutive misses, stop
+            if rows and consecutive_misses >= 3:
+                break
+            continue
+    if rows:
+        print(f"[schedule][fallback] built synthesized schedule year={year} rows={len(rows)}")
+        return pd.DataFrame(rows)
+    return pd.DataFrame()
+
+def _load_schedule_with_fallback(year: int) -> pd.DataFrame:
+    """Load schedule with multi-step fallback and logging.
+    1. Normal fastf1.get_event_schedule (skipped only logically if FORCE_ERGAST set – we still try but log intent)
+    2. If empty -> synthesized fallback via probing sessions
+    Returns empty DataFrame if all attempts fail."""
+    try:
+        if FORCE_ERGAST:
+            print(f"[schedule] FORCE_ERGAST set – attempting normal call (fastf1 will still handle fallbacks) year={year}")
+        sched = fastf1.get_event_schedule(year, include_testing=False)
+        if sched is not None and not sched.empty:
+            return sched
+        print(f"[schedule] primary schedule empty year={year}; attempting fallback synthesis")
+    except Exception as e:
+        print(f"[schedule] primary schedule exception year={year}: {e}")
+    return _build_fallback_schedule(year)
+
 # ---- In-memory hot cache & build lock --------------------------------------
 _MEM_SEASON: dict[int, dict] = {}
 _MEM_TTL_SECONDS = int(os.getenv("SEASON_MEM_TTL", "21600"))  # 6h default
@@ -383,7 +434,9 @@ def load_season(year: int, response: Response, refresh: bool = False, debug_driv
                     response.headers["X-Season-Cache"] = "disk"
                     return cached
 
-        schedule = fastf1.get_event_schedule(year, include_testing=False)
+        schedule = _load_schedule_with_fallback(year)
+        if schedule is None or schedule.empty:
+            raise HTTPException(status_code=502, detail=f"Failed to load schedule for season {year}")
         # Determine sprint rounds once
         sprint_rounds = set(_detect_sprint_rounds(year)) if os.getenv("ENABLE_SPRINT_POINTS", "1").lower() not in ("0", "false") else set()
         # Precedence: query param > forced (config/env/file) > none

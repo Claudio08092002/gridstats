@@ -7,3 +7,6 @@ python-multipart==0.0.9
 fastf1==3.3.6
 pandas>=2.2
 numpy>=1.26
+beautifulsoup4>=4.10
+lxml>=4.8
+requests_cache>=1.0
