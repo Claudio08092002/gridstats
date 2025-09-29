@@ -1,25 +1,34 @@
 FROM python:3.11-slim
 
+# Prevent Python from writing pyc files to disk and enable unbuffered output
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
+# Set working directory inside the container
 WORKDIR /app
 
-# pip aktualisieren (holt stabile Wheels für numpy/pandas)
+# Upgrade pip to get stable wheels for numpy/pandas
 RUN python -m pip install --upgrade pip
 
-# Requirements zuerst kopieren → bessere Layer-Caches
+# Copy requirements first to leverage Docker layer caching
 COPY backend/requirements.txt /app/requirements.txt
 
-# Nur Wheels verwenden, keine Source-Builds (kein gcc nötig)
+# Install Python dependencies from wheels only (no build tools like gcc needed)
 RUN pip install --no-cache-dir --only-binary=:all: -r requirements.txt
 
-# App-Code kopieren
+# Copy the application code into the image
 COPY backend/ /app/
 
-# Cache-Pfade
+# Cache paths
+# Only persist the FastF1 cache between container runs.  The season cache
+# directory is left inside the image so that the bundled JSON files remain
+# available at runtime.  Declaring it as a volume would overwrite the
+# in-image data with an empty directory.
 ENV FASTF1_CACHE=/data/fastf1_cache
-VOLUME ["/data/fastf1_cache", "/app/app/season_cache"]
+VOLUME ["/data/fastf1_cache"]
 
+# Expose the FastAPI port
 EXPOSE 8000
+
+# Run the FastAPI application using Uvicorn
 CMD ["uvicorn", "app.main:app", "--host=0.0.0.0", "--port=8000", "--access-log"]

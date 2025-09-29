@@ -11,11 +11,8 @@ services:
       - PREWARM_SEASONS=2024,2025
       - ENABLE_SPRINT_POINTS=1
       - SEASON_MEM_TTL=21600
-
-
     volumes:
       - fastf1_cache:/data/fastf1_cache
-      - season_cache:/app/app/season_cache
     ports:
       - "7500:8000"
     restart: unless-stopped
@@ -29,4 +26,3 @@ services:
 
 volumes:
   fastf1_cache:
-  season_cache:
