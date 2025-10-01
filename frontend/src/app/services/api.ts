@@ -1,6 +1,6 @@
 // frontend/src/app/services/api.ts
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../enviroments/enviroments';
 
 export interface DriverSummary {
@@ -17,20 +17,28 @@ export interface DriverSummary {
   pole_rounds: number[];
 }
 
-
 export interface SeasonResponse {
   season: number;
   drivers: Record<string, DriverSummary>;
 }
 
-// Track listing and map types
+export interface TrackRoundRef {
+  year: number;
+  round: number;
+  event_name: string;
+}
+
 export interface TrackInfo {
   key: string;
   name: string;
-  year: number;
-  round: number;
+  display_name: string;
   country?: string;
+  country_code?: string | null;
   location?: string;
+  latest_year: number;
+  latest_round: number;
+  years: number[];
+  rounds: TrackRoundRef[];
 }
 
 export interface TrackPoint {
@@ -57,10 +65,26 @@ export interface RaceWinnerInfo {
   event?: string;
 }
 
+export interface TrackLayoutVariant {
+  layout_signature: string;
+  layout_label?: string;
+  layout_length?: number | null;
+  circuit_name?: string;
+  years: number[];
+  rounds: TrackRoundRef[];
+}
+
 export interface TrackMapResponse {
   track: TrackPoint[];
   corners: TrackCorner[];
+  layout_length?: number | null;
+  layout_label?: string;
+  layout_signature?: string;
+  circuit_name?: string;
+  winners?: RaceWinnerInfo[];
   winner?: RaceWinnerInfo | null;
+  layout_variants?: TrackLayoutVariant[];
+  layout_years?: number[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -104,11 +128,25 @@ export class ApiService {
     return this.http.get<SeasonResponse>(url);
   }
 
-  getTracks() {
-    return this.http.get<TrackInfo[]>(this.buildUrl('/f1/tracks'));
+  getTracks(refresh: boolean = false) {
+    const suffix = refresh ? '?refresh=true' : '';
+    return this.http.get<TrackInfo[]>(this.buildUrl(`/f1/tracks${suffix}`));
   }
 
-  getTrackMap(year: number, round: number) {
-    return this.http.get<TrackMapResponse>(this.buildUrl(`/f1/trackmap/${year}/${round}`));
+  getTrackMap(
+    year: number,
+    round: number,
+    options: { includeLayouts?: boolean; refresh?: boolean } = {}
+  ) {
+    let params = new HttpParams();
+    if (options.refresh) {
+      params = params.set('refresh', 'true');
+    }
+    if (options.includeLayouts === false) {
+      params = params.set('include_layouts', 'false');
+    }
+    return this.http.get<TrackMapResponse>(this.buildUrl(`/f1/trackmap/${year}/${round}`), {
+      params,
+    });
   }
 }

@@ -1,7 +1,16 @@
-import { Component, OnDestroy, OnInit, inject, PLATFORM_ID } from '@angular/core';
+﻿import { Component, OnDestroy, OnInit, inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService, TrackInfo, TrackMapResponse, TrackPoint, TrackCorner } from '../../services/api';
+import {
+  ApiService,
+  TrackInfo,
+  TrackMapResponse,
+  TrackPoint,
+  TrackCorner,
+  TrackLayoutVariant,
+  RaceWinnerInfo,
+  TrackRoundRef,
+} from '../../services/api';
 import * as d3 from 'd3';
 
 @Component({
@@ -9,91 +18,215 @@ import * as d3 from 'd3';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './track.html',
-  styleUrls: ['./track.css']
+  styleUrls: ['./track.css'],
 })
 export class TrackComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private platformId = inject(PLATFORM_ID);
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
 
   currentYear = new Date().getFullYear();
+
   tracks: TrackInfo[] = [];
   selectedKey: string | null = null;
-  selected?: TrackInfo;
+  selectedTrack?: TrackInfo;
+
+  selectedVariantSignature: string | null = null;
+  selectedRoundKey: string | null = null;
+  selectedRound?: TrackRoundRef;
 
   trackMap?: TrackMapResponse;
+  layoutVariants: TrackLayoutVariant[] = [];
+  layoutYears: number[] = [];
+  winners: RaceWinnerInfo[] = [];
 
-  // Minimal country-to-flag mapping; extend as needed
-  private countryFlags: Record<string, string> = {
-    'Australia': '🇦🇺',
-    'Austria': '🇦🇹',
-    'Azerbaijan': '🇦🇿',
-    'Bahrain': '🇧🇭',
-    'Belgium': '🇧🇪',
-    'Brazil': '🇧🇷',
-    'Canada': '🇨🇦',
-    'China': '🇨🇳',
-    'France': '🇫🇷',
-    'Germany': '🇩🇪',
-    'Hungary': '🇭🇺',
-    'Italy': '🇮🇹',
-    'Japan': '🇯🇵',
-    'Mexico': '🇲🇽',
-    'Monaco': '🇲🇨',
-    'Netherlands': '🇳🇱',
-    'Portugal': '🇵🇹',
-    'Qatar': '🇶🇦',
-    'Russia': '🇷🇺',
-    'Saudi Arabia': '🇸🇦',
-    'Singapore': '🇸🇬',
-    'South Africa': '🇿🇦',
-    'Spain': '🇪🇸',
-    'United Arab Emirates': '🇦🇪',
-    'United Kingdom': '🇬🇧',
-    'Great Britain': '🇬🇧',
-    'USA': '🇺🇸',
-    'United States': '🇺🇸',
-    'United States of America': '🇺🇸',
-    'United States Grand Prix': '🇺🇸',
-    'América': '🇺🇸',
-    'Argentina': '🇦🇷',
-    'Emilia-Romagna': '🇮🇹',
-    'San Marino': '🇸🇲',
-    'Turkey': '🇹🇷',
-    'Abu Dhabi': '🇦🇪'
-  };
-
-  flagFor(country?: string | null): string {
-    if (!country) return '';
-    const flag = this.countryFlags[country];
-    return flag ?? '';
-  }
+  loading = false;
+  error: string | null = null;
 
   ngOnInit(): void {
-    if (isPlatformBrowser(this.platformId)) {
-      this.api.getTracks().subscribe({
-        next: (items) => this.tracks = items,
-      });
+    if (!this.isBrowser) {
+      return;
     }
-  }
-
-  ngOnDestroy(): void {
-    // cleanup if needed
-  }
-
-  onSelectKey(): void {
-    if (!this.selectedKey) return;
-    this.selected = this.tracks.find(t => t.key === this.selectedKey) ?? undefined;
-    if (!this.selected) return;
-    this.api.getTrackMap(this.selected.year, this.selected.round).subscribe({
-      next: (map) => {
-        this.trackMap = map;
-        this.drawTrackMap(map);
-      }
+    this.api.getTracks().subscribe({
+      next: (items) => {
+        this.tracks = (items ?? []).sort((a, b) => a.display_name.localeCompare(b.display_name));
+      },
+      error: (err) => {
+        this.error = err?.error?.detail ?? err?.message ?? 'Failed to load tracks';
+      },
     });
   }
 
-  private drawTrackMap(trackMapData: TrackMapResponse) {
-    if (!isPlatformBrowser(this.platformId)) {
+  ngOnDestroy(): void {
+    // No subscriptions to clean up; kept for future extensibility.
+  }
+
+  get layoutYearsLabel(): string {
+    return this.layoutYears?.length ? this.layoutYears.join(', ') : '';
+  }
+
+  get selectedVariantRounds(): TrackRoundRef[] {
+    const variant = this.layoutVariants.find((item) => item.layout_signature === this.selectedVariantSignature);
+    if (!variant) {
+      return [];
+    }
+    return [...variant.rounds].sort((a, b) => {
+      if (a.year === b.year) {
+        return a.round - b.round;
+      }
+      return a.year - b.year;
+    });
+  }
+
+  get displayWinners(): RaceWinnerInfo[] {
+    if (!this.winners?.length) {
+      return [];
+    }
+    return [...this.winners].sort((a, b) => {
+      if (a.year === b.year) {
+        return b.round - a.round;
+      }
+      return b.year - a.year;
+    });
+  }
+
+  flagClass(track?: TrackInfo | null): string[] | null {
+    const code = track?.country_code;
+    if (!code) {
+      return null;
+    }
+    const normalized = code.toLowerCase();
+    return ['fi', `fi-${normalized}`];
+  }
+
+  onSelectTrack(): void {
+    this.trackMap = undefined;
+    this.layoutVariants = [];
+    this.layoutYears = [];
+    this.winners = [];
+    this.selectedVariantSignature = null;
+    this.selectedRoundKey = null;
+    this.selectedRound = undefined;
+    this.error = null;
+
+    if (!this.selectedKey) {
+      this.selectedTrack = undefined;
+      return;
+    }
+
+    this.selectedTrack = this.tracks.find((item) => item.key === this.selectedKey);
+    if (!this.selectedTrack) {
+      return;
+    }
+
+    const defaultRound = this.pickLatestRound(this.selectedTrack.rounds);
+    if (defaultRound) {
+      this.loadTrackMap(defaultRound, true);
+    }
+  }
+
+  onVariantSelect(signature: string | null): void {
+    if (!signature) {
+      return;
+    }
+    // Don't return early if same signature - allow redraw
+    const needsReload = this.selectedVariantSignature !== signature;
+    this.selectedVariantSignature = signature;
+    const variant = this.layoutVariants.find((item) => item.layout_signature === signature);
+    if (!variant) {
+      return;
+    }
+    const targetRound = this.pickLatestRound(variant.rounds);
+    if (targetRound) {
+      if (needsReload) {
+        this.loadTrackMap(targetRound, true);
+      } else {
+        // Redraw current map even if same signature
+        if (this.trackMap) {
+          this.drawTrackMap(this.trackMap);
+        }
+      }
+    }
+  }
+
+  onRoundSelect(roundKey: string | null): void {
+    if (!roundKey) {
+      return;
+    }
+    if (this.selectedRoundKey === roundKey) {
+      return;
+    }
+    this.selectedRoundKey = roundKey;
+    const [yearStr, roundStr] = roundKey.split('-');
+    const year = Number(yearStr);
+    const round = Number(roundStr);
+    if (!Number.isFinite(year) || !Number.isFinite(round)) {
+      return;
+    }
+    let roundRef: TrackRoundRef | undefined;
+    const variant = this.layoutVariants.find((item) => item.layout_signature === this.selectedVariantSignature);
+    if (variant) {
+      roundRef = variant.rounds.find((r) => r.year === year && r.round === round);
+    }
+    if (!roundRef && this.selectedTrack) {
+      roundRef = this.selectedTrack.rounds.find((r) => r.year === year && r.round === round);
+    }
+    if (roundRef) {
+      this.loadTrackMap(roundRef, true);
+    }
+  }
+
+  private pickLatestRound(rounds: TrackRoundRef[] | undefined): TrackRoundRef | null {
+    if (!rounds || !rounds.length) {
+      return null;
+    }
+    const sorted = [...rounds].sort((a, b) => {
+      if (a.year === b.year) {
+        return a.round - b.round;
+      }
+      return a.year - b.year;
+    });
+    return sorted[sorted.length - 1];
+  }
+
+  private loadTrackMap(roundRef: TrackRoundRef, includeLayouts: boolean): void {
+    if (!this.isBrowser) {
+      return;
+    }
+    this.loading = true;
+    this.error = null;
+    this.selectedRound = roundRef;
+    this.selectedRoundKey = `${roundRef.year}-${roundRef.round}`;
+
+    this.api.getTrackMap(roundRef.year, roundRef.round, { includeLayouts }).subscribe({
+      next: (map) => {
+        this.loading = false;
+        this.trackMap = map;
+        this.layoutVariants = map.layout_variants ?? [];
+        this.layoutYears = map.layout_years ?? [];
+        this.winners = map.winners ?? [];
+        const stillValid = this.selectedVariantSignature
+          ? this.layoutVariants.some((variant) => variant.layout_signature === this.selectedVariantSignature)
+          : false;
+
+        if (map.layout_signature) {
+          this.selectedVariantSignature = map.layout_signature;
+        } else if (!stillValid && this.layoutVariants.length) {
+          this.selectedVariantSignature = this.layoutVariants[0].layout_signature;
+        } else if (!stillValid) {
+          this.selectedVariantSignature = null;
+        }
+        this.drawTrackMap(map);
+      },
+      error: (err) => {
+        this.loading = false;
+        this.error = err?.error?.detail ?? err?.message ?? 'Failed to load track map';
+      },
+    });
+  }
+
+  private drawTrackMap(trackMapData: TrackMapResponse): void {
+    if (!this.isBrowser) {
       return;
     }
 
@@ -103,7 +236,6 @@ export class TrackComponent implements OnInit, OnDestroy {
     const svgNode = svg.node();
 
     if (!svgNode) {
-      // SVG may not exist yet because of *ngIf; try again on next tick.
       setTimeout(() => this.drawTrackMap(trackMapData), 0);
       return;
     }
@@ -113,16 +245,23 @@ export class TrackComponent implements OnInit, OnDestroy {
     const trackData: TrackPoint[] = trackMapData.track ?? [];
     const cornerData: TrackCorner[] = trackMapData.corners ?? [];
 
+    console.log('[TrackMap] Drawing track map:', {
+      trackPoints: trackData.length,
+      corners: cornerData.length,
+      layoutSignature: trackMapData.layout_signature,
+      layoutLabel: trackMapData.layout_label,
+    });
+
     if (!trackData.length) {
-      console.warn('Track data is empty; nothing to draw.');
+      console.warn('[TrackMap] No track data available');
       return;
     }
 
-  const widthAttr = Number(svgNode.getAttribute('width'));
-  const heightAttr = Number(svgNode.getAttribute('height'));
-  const width = Number.isFinite(widthAttr) && widthAttr > 0 ? widthAttr : 800;
-  const height = Number.isFinite(heightAttr) && heightAttr > 0 ? heightAttr : 600;
-  const padding = 40;
+    const widthAttr = Number(svgNode.getAttribute('width'));
+    const heightAttr = Number(svgNode.getAttribute('height'));
+    const width = Number.isFinite(widthAttr) && widthAttr > 0 ? widthAttr : 800;
+    const height = Number.isFinite(heightAttr) && heightAttr > 0 ? heightAttr : 600;
+    const padding = 40;
 
     const xExtent = d3.extent(trackData, (d: TrackPoint) => d.x);
     const yExtent = d3.extent(trackData, (d: TrackPoint) => d.y);
@@ -133,7 +272,6 @@ export class TrackComponent implements OnInit, OnDestroy {
     const maxY = yExtent[1];
 
     if (minX === undefined || maxX === undefined || minY === undefined || maxY === undefined) {
-      console.error('Track extents undefined, cannot render track.');
       return;
     }
 
@@ -143,9 +281,9 @@ export class TrackComponent implements OnInit, OnDestroy {
     const scale = Math.max(
       Math.min(
         (width - 2 * padding) / rangeWidth,
-        (height - 2 * padding) / rangeHeight
+        (height - 2 * padding) / rangeHeight,
       ),
-      1e-3
+      1e-3,
     );
 
     const xOffset = (width - scale * rangeWidth) / 2;
@@ -160,12 +298,14 @@ export class TrackComponent implements OnInit, OnDestroy {
       .attr('viewBox', `0 0 ${width} ${height}`)
       .attr('preserveAspectRatio', 'xMidYMid meet');
 
-    const lineGenerator = d3.line()
-      .x((d: TrackPoint) => projectX(d.x))
-      .y((d: TrackPoint) => projectY(d.y))
+    const lineGenerator = d3
+      .line()
+      .x((d: unknown) => projectX((d as TrackPoint).x))
+      .y((d: unknown) => projectY((d as TrackPoint).y))
       .curve(d3.curveLinearClosed);
 
-    const path = svg.append('path')
+    const path = svg
+      .append('path')
       .datum(trackData)
       .attr('fill', 'none')
       .attr('stroke', '#FFFFFF')
@@ -174,28 +314,37 @@ export class TrackComponent implements OnInit, OnDestroy {
 
     const pathNode = path.node();
     if (!pathNode || !pathNode.getTotalLength) {
-      console.error('Unable to compute path length.');
       return;
     }
 
     const totalLength = pathNode.getTotalLength();
     const animationDuration = 2000;
 
-    path.attr('stroke-dasharray', `${totalLength} ${totalLength}`)
+    path
+      .attr('stroke-dasharray', `${totalLength} ${totalLength}`)
       .attr('stroke-dashoffset', totalLength)
       .transition()
       .duration(animationDuration)
       .ease(d3.easeCubicInOut)
       .attr('stroke-dashoffset', 0);
 
+    console.log('[TrackMap] Path animated, checking corners:', {
+      cornerCount: cornerData.length,
+      hasCorners: cornerData.length > 0,
+    });
+
     if (!cornerData.length) {
+      console.warn('[TrackMap] No corner data available - skipping corner rendering');
       return;
     }
+
+    console.log('[TrackMap] Starting corner rendering for', cornerData.length, 'corners');
 
     const distance = (x1: number, y1: number, x2: number, y2: number) => Math.hypot(x2 - x1, y2 - y1);
     let runningDistance = 0;
     const startingPoint = pathNode.getPointAtLength(0);
 
+    // First pass: calculate distances from start for animation delays
     cornerData.forEach((corner: TrackCorner, index: number) => {
       const currentX = projectX(corner.track_position[0]);
       const currentY = projectY(corner.track_position[1]);
@@ -208,19 +357,21 @@ export class TrackComponent implements OnInit, OnDestroy {
           projectX(prev.track_position[0]),
           projectY(prev.track_position[1]),
           currentX,
-          currentY
+          currentY,
         );
       }
 
       corner.distanceFromStart = runningDistance;
     });
 
+    // Second pass: render corners with calculated delays
     cornerData.forEach((corner: TrackCorner) => {
-      const delayTime = this.findTimeToReachDistance(corner.distanceFromStart ?? 0, totalLength, animationDuration);
+      const delayTime = this.findTimeToReachDistance(corner.distanceFromStart || 0, totalLength, animationDuration);
       const labelX = projectX(corner.text_position[0]);
       const labelY = projectY(corner.text_position[1]);
 
-      svg.append('circle')
+      svg
+        .append('circle')
         .attr('cx', labelX)
         .attr('cy', labelY)
         .attr('r', 13)
@@ -230,7 +381,8 @@ export class TrackComponent implements OnInit, OnDestroy {
         .delay(delayTime)
         .attr('opacity', 1);
 
-      svg.append('text')
+      svg
+        .append('text')
         .attr('x', labelX)
         .attr('y', labelY)
         .attr('dy', '0.35em')
@@ -245,7 +397,8 @@ export class TrackComponent implements OnInit, OnDestroy {
         .attr('opacity', 1);
 
       if (corner.corner_name) {
-        svg.append('text')
+        svg
+          .append('text')
           .attr('x', labelX)
           .attr('y', labelY + 24)
           .attr('text-anchor', 'middle')
@@ -259,6 +412,8 @@ export class TrackComponent implements OnInit, OnDestroy {
           .attr('opacity', 1);
       }
     });
+
+    console.log('[TrackMap] Finished rendering', cornerData.length, 'corners');
   }
 
   private findTimeToReachDistance(distance: number, totalLength: number, animationDuration: number): number {
@@ -271,7 +426,7 @@ export class TrackComponent implements OnInit, OnDestroy {
     const epsilon = 1e-5;
 
     for (let i = 0; i < 100; i++) {
-      const functionValue = (3 * tGuess ** 2 - 2 * tGuess ** 3) - normalizedDistance;
+      const functionValue = 3 * tGuess ** 2 - 2 * tGuess ** 3 - normalizedDistance;
       const derivativeValue = 6 * tGuess - 6 * tGuess ** 2;
 
       if (Math.abs(derivativeValue) < epsilon) {
@@ -289,4 +444,4 @@ export class TrackComponent implements OnInit, OnDestroy {
     return Math.min(Math.max(tGuess, 0), 1) * animationDuration;
   }
 }
- 
+

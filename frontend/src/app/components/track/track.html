@@ -1,26 +1,74 @@
 <div class="card">
   <div class="controls">
     <div class="field span-6">
-      <label for="trackSelect">Track</label>
-      <select id="trackSelect" [(ngModel)]="selectedKey" (change)="onSelectKey()" class="select select--dark border">
-        <option [ngValue]="null" disabled selected>— choose a track —</option>
-        <option *ngFor="let t of tracks" [value]="t.key">
-          {{ flagFor(t.country) }} {{ t.name }} (R{{t.round}} {{t.year}})
+      <label for="trackSelect">Grand Prix</label>
+      <select
+        id="trackSelect"
+        class="select select--dark border"
+        [(ngModel)]="selectedKey"
+        (ngModelChange)="onSelectTrack()"
+      >
+        <option [ngValue]="null" disabled>— choose a track —</option>
+        <option *ngFor="let track of tracks" [ngValue]="track.key">
+          {{ track.display_name }} ({{ track.latest_year }})
         </option>
       </select>
     </div>
-  </div>
 
-  <div class="map-card" *ngIf="trackMap">
-    <svg class="track" id="trackMap" width="800" height="600"></svg>
-  </div>
-
-  <div class="race-summary" *ngIf="trackMap?.winner as winner">
-    <div class="race-summary__label">Winner {{ winner.year }}{{ winner.event ? ' • ' + winner.event : '' }}:</div>
-    <div class="race-summary__value">
-      <span class="race-summary__driver">{{ winner.driver || 'Unknown driver' }}</span>
-      <span class="race-summary__team" *ngIf="winner.team">({{ winner.team }})</span>
+    <div class="field span-3" *ngIf="layoutVariants.length > 1">
+      <label for="variantSelect">Layout</label>
+      <select
+        id="variantSelect"
+        class="select select--dark border"
+        [(ngModel)]="selectedVariantSignature"
+        (ngModelChange)="onVariantSelect($event)"
+      >
+        <option *ngFor="let variant of layoutVariants" [ngValue]="variant.layout_signature">
+          {{ variant.layout_label || variant.circuit_name || 'Layout' }}
+        </option>
+      </select>
     </div>
+
+
+  </div>
+
+  <div class="track-header" *ngIf="selectedTrack">
+    <div class="flag-wrapper" *ngIf="flagClass(selectedTrack) as flagClasses">
+      <span class="flag-icon" [ngClass]="flagClasses" aria-hidden="true"></span>
+    </div>
+    <div class="title-text">
+      <h2>{{ selectedTrack.display_name }}</h2>
+      <div class="subtitle">
+        <span *ngIf="selectedTrack.location">{{ selectedTrack.location }}</span>
+        <span *ngIf="selectedTrack.country">• {{ selectedTrack.country }}</span>
+        <span *ngIf="selectedRound">• {{ selectedRound.year }} (Round {{ selectedRound.round }})</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout-details" *ngIf="trackMap">
+    <div class="layout-chip" *ngIf="trackMap.layout_label">{{ trackMap.layout_label }}</div>
+    <div class="layout-meta">
+      <span *ngIf="trackMap.layout_length as length">Length: {{ length | number: '1.3-3' }} km</span>
+      <span *ngIf="layoutYearsLabel as years">Years: {{ years }}</span>
+    </div>
+  </div>
+
+  <div class="map-card" *ngIf="trackMap || loading || error" [class.map-card--loading]="loading">
+    <svg class="track" id="trackMap" width="800" height="600"></svg>
+    <div class="map-overlay" *ngIf="loading">Loading track …</div>
+    <div class="map-overlay error" *ngIf="!loading && error">{{ error }}</div>
+  </div>
+
+  <div class="winner-list" *ngIf="displayWinners.length">
+    <h3>Recent winners</h3>
+    <ul>
+      <li *ngFor="let winner of displayWinners">
+        <span class="year">{{ winner.year }}</span>
+        <span class="name">{{ winner.driver || 'Unknown driver' }}</span>
+        <span class="team" *ngIf="winner.team">({{ winner.team }})</span>
+      </li>
+    </ul>
   </div>
 
   <footer class="footer">© {{ currentYear }} GridStats</footer>

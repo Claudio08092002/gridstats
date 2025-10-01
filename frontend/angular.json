@@ -19,9 +19,15 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "**/*",
+                "input": "node_modules/flag-icons/flags",
+                "output": "assets/flags"
               }
             ],
             "styles": [
+              "src/styles/flag-icons.scss",
               "src/styles.css"
             ],
             "server": "src/main.server.ts",
@@ -83,9 +89,15 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "**/*",
+                "input": "node_modules/flag-icons/flags",
+                "output": "assets/flags"
               }
             ],
             "styles": [
+              "src/styles/flag-icons.scss",
               "src/styles.css"
             ]
           }
