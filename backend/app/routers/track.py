@@ -1075,6 +1075,8 @@ def warmup_all_tracks(enhanced: bool = True) -> Dict[str, Any]:
     
     results = []
     
+    # Phase 1: Load all basic track data
+    print("[WARMUP PHASE 1] Loading basic track data...\n")
     for track in tracks:
         track_key = track.get("key")
         track_name = track.get("display_name", track_key)
@@ -1099,21 +1101,10 @@ def warmup_all_tracks(enhanced: bool = True) -> Dict[str, Any]:
             try:
                 # Try cache first
                 cached = _load_cached_map_entry(track_key, year, round_number)
-                if cached and not enhanced:
+                if cached:
                     cached_events += 1
                     track_result["cached"] += 1
                     continue
-                
-                if cached and enhanced:
-                    # Check if cache already has metadata
-                    has_metadata = (
-                        cached.get("winners") is not None or
-                        cached.get("layout_variants") is not None
-                    )
-                    if has_metadata:
-                        cached_events += 1
-                        track_result["cached"] += 1
-                        continue
                 
                 # Load from FastF1 and cache it
                 map_data, _, _ = _load_track_map_with_fallback(
@@ -1123,25 +1114,8 @@ def warmup_all_tracks(enhanced: bool = True) -> Dict[str, Any]:
                     refresh=False, 
                     track_key_hint=track_key
                 )
-                
-                if enhanced:
-                    # Add metadata (winners, layout_variants, layout_years)
-                    finalized = _finalize_map_payload(map_data, track, include_layouts=True)
-                    # Re-save with metadata
-                    sanitized_enhanced = _sanitize_map_payload(finalized, include_metadata=True)
-                    if sanitized_enhanced:
-                        src_year = sanitized_enhanced.get("year", year)
-                        src_round = sanitized_enhanced.get("round", round_number)
-                        _store_cached_map_entry(track_key, src_year, src_round, sanitized_enhanced)
-                        enhanced_events += 1
-                        track_result["enhanced"] += 1
-                        print(f"[WARMUP] Enhanced {track_key} {year}-{round_number} with metadata")
-                    else:
-                        loaded_events += 1
-                        track_result["loaded"] += 1
-                else:
-                    loaded_events += 1
-                    track_result["loaded"] += 1
+                loaded_events += 1
+                track_result["loaded"] += 1
                 
             except Exception as exc:
                 failed_events += 1
@@ -1151,14 +1125,72 @@ def warmup_all_tracks(enhanced: bool = True) -> Dict[str, Any]:
                 print(f"[WARMUP ERROR] {track_name} {error_msg}")
         
         results.append(track_result)
-        if enhanced:
-            print(f"[WARMUP] {track_name}: {track_result['enhanced']} enhanced, {track_result['loaded']} loaded, {track_result['cached']} cached, {track_result['failed']} failed")
-        else:
-            print(f"[WARMUP] {track_name}: {track_result['loaded']} loaded, {track_result['cached']} cached, {track_result['failed']} failed")
+        print(f"[WARMUP] {track_name}: {track_result['loaded']} loaded, {track_result['cached']} cached, {track_result['failed']} failed")
+    
+    # Phase 2: Add enhanced metadata if requested
+    if enhanced:
+        print("\n" + "="*60)
+        print("[WARMUP PHASE 2] Adding enhanced metadata (winners, layout variants)...\n")
+        
+        for track in tracks:
+            track_key = track.get("key")
+            track_name = track.get("display_name", track_key)
+            events = track.get("events", [])
+            
+            # Get the track result for this track
+            track_result = next((r for r in results if r["track_key"] == track_key), None)
+            if not track_result:
+                continue
+            
+            # Load cache bundle to update all entries
+            cache_bundle, cache_path = _load_track_cache_bundle(track_key)
+            cached_entries = cache_bundle.get("entries", {})
+            
+            modified = False
+            for event in events:
+                year = int(event.get("year"))
+                round_number = int(event.get("round"))
+                entry_key = f"{year}-{round_number}"
+                
+                cached_entry = cached_entries.get(entry_key)
+                if not cached_entry or not isinstance(cached_entry, dict):
+                    continue
+                
+                # Check if already has metadata
+                if cached_entry.get("winners") is not None or cached_entry.get("layout_variants") is not None:
+                    continue
+                
+                try:
+                    # Collect winners for this track
+                    winners = _collect_winners(track)
+                    
+                    # Collect layout variants (from ALL cached entries)
+                    layout_variants, layout_years = _collect_layout_variants(track, cached_entry.get("layout_signature", ""))
+                    
+                    # Find winner for this specific event
+                    winner = next((w for w in winners if w.get("year") == year and w.get("round") == round_number), None)
+                    
+                    # Update entry with metadata
+                    cached_entry["winners"] = winners
+                    cached_entry["winner"] = winner
+                    cached_entry["layout_variants"] = layout_variants
+                    cached_entry["layout_years"] = layout_years
+                    
+                    modified = True
+                    enhanced_events += 1
+                    track_result["enhanced"] += 1
+                    
+                except Exception as exc:
+                    print(f"[WARMUP ENHANCE ERROR] {track_name} {year}-{round_number}: {str(exc)}")
+            
+            # Save updated cache bundle
+            if modified:
+                _store_track_cache_bundle(track_key, cache_bundle)
+                print(f"[WARMUP] Enhanced {track_name} with metadata ({track_result['enhanced']} entries)")
     
     print("\n" + "="*60)
     if enhanced:
-        print(f"[WARMUP] Completed! {enhanced_events} enhanced, {loaded_events} loaded, {cached_events} cached, {failed_events} failed")
+        print(f"[WARMUP] Completed! {loaded_events} loaded, {cached_events} cached, {enhanced_events} enhanced, {failed_events} failed")
     else:
         print(f"[WARMUP] Completed! {loaded_events} newly loaded, {cached_events} already cached, {failed_events} failed")
     print("="*60 + "\n")
