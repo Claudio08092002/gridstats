@@ -80,7 +80,14 @@ export class DriverComparison implements OnDestroy {
       next: (resp: SeasonResponse) => {
         this.loading = false;
         this.driverMap = resp.drivers ?? {};
-        this.driverKeys = Object.keys(this.driverMap).sort();
+        // Sort by first name instead of driver code
+        this.driverKeys = Object.keys(this.driverMap).sort((a, b) => {
+          const nameA = this.driverMap[a]?.full_name || a;
+          const nameB = this.driverMap[b]?.full_name || b;
+          const firstNameA = nameA.split(' ')[0];
+          const firstNameB = nameB.split(' ')[0];
+          return firstNameA.localeCompare(firstNameB);
+        });
         console.log('Loaded drivers:', this.driverKeys);
         console.log(this.driverMap);
 
@@ -91,7 +98,14 @@ export class DriverComparison implements OnDestroy {
             next: (fresh: SeasonResponse) => {
               this.loading = false;
               this.driverMap = fresh.drivers ?? {};
-              this.driverKeys = Object.keys(this.driverMap).sort();
+              // Sort by first name instead of driver code
+              this.driverKeys = Object.keys(this.driverMap).sort((a, b) => {
+                const nameA = this.driverMap[a]?.full_name || a;
+                const nameB = this.driverMap[b]?.full_name || b;
+                const firstNameA = nameA.split(' ')[0];
+                const firstNameB = nameB.split(' ')[0];
+                return firstNameA.localeCompare(firstNameB);
+              });
             },
             error: (err) => {
               this.loading = false;
