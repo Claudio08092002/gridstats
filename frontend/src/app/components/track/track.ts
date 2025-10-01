@@ -293,7 +293,36 @@ export class TrackComponent implements OnInit, OnDestroy {
         next: (bundle) => {
           if (bundle && typeof bundle === 'object' && bundle.entries) {
             const key = `${roundRef.year}-${roundRef.round}`;
-            const entry = bundle.entries[key];
+            let entry = bundle.entries[key];
+            
+            // Fallback: if requested year-round doesn't exist, use the most recent cached entry
+            if (!entry || !entry.track) {
+              const entryKeys = Object.keys(bundle.entries || {});
+              if (entryKeys.length > 0) {
+                // Sort entries by year-round (descending) and pick the most recent
+                const sortedKeys = entryKeys.sort((a, b) => {
+                  const [yearA, roundA] = a.split('-').map(Number);
+                  const [yearB, roundB] = b.split('-').map(Number);
+                  if (yearA !== yearB) return yearB - yearA;
+                  return roundB - roundA;
+                });
+                const fallbackKey = sortedKeys[0];
+                entry = bundle.entries[fallbackKey];
+                
+                // Update roundRef to match the fallback entry
+                if (entry && entry.track) {
+                  const [fallbackYear, fallbackRound] = fallbackKey.split('-').map(Number);
+                  const originalRound = `${roundRef.year}-${roundRef.round}`;
+                  roundRef = { 
+                    year: fallbackYear, 
+                    round: fallbackRound,
+                    event_name: entry.circuit_name || entry.layout_label || this.selectedTrack?.display_name || ''
+                  };
+                  console.log(`[TRACK FALLBACK] ${originalRound} not in cache, using ${fallbackYear}-${fallbackRound}`);
+                }
+              }
+            }
+            
             if (entry && entry.track) {
               // Merge the cached entry into a TrackMapResponse-like object.
               // Enhanced cache files now include winners, layout_variants, and layout_years!

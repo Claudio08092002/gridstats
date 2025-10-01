@@ -1012,6 +1012,102 @@ def get_track_map(year: int, round: int, refresh: bool = False, include_layouts:
         raise
 
 
+@router.get("/tracks/enhance-cache")
+def enhance_existing_cache() -> Dict[str, Any]:
+    """
+    Add winners and layout_variants metadata to existing cache files.
+    This is faster than full warmup - only adds metadata, doesn't fetch from FastF1.
+    """
+    print("\n" + "="*60)
+    print("[ENHANCE CACHE] Adding metadata to existing cache entries...")
+    print("="*60 + "\n")
+    
+    tracks = _load_track_index(refresh=False)
+    enhanced_tracks = 0
+    enhanced_entries = 0
+    skipped_tracks = 0
+    
+    results = []
+    
+    for track in tracks:
+        track_key = track.get("key")
+        track_name = track.get("display_name", track_key)
+        
+        # Load cache bundle
+        cache_bundle, cache_path = _load_track_cache_bundle(track_key)
+        cached_entries = cache_bundle.get("entries", {})
+        
+        if not cached_entries:
+            skipped_tracks += 1
+            continue
+        
+        track_result = {
+            "track": track_name,
+            "track_key": track_key,
+            "total_entries": len(cached_entries),
+            "enhanced": 0
+        }
+        
+        # Collect winners ONCE for this track (applies to all entries)
+        winners = _collect_winners(track)
+        
+        modified = False
+        for entry_key, cached_entry in cached_entries.items():
+            if not isinstance(cached_entry, dict):
+                continue
+            
+            # Check if already has metadata (check if winners array exists AND has items)
+            if cached_entry.get("winners") and len(cached_entry.get("winners", [])) > 0:
+                continue
+            
+            try:
+                # Parse year/round from entry key
+                year_str, round_str = entry_key.split('-')
+                year = int(year_str)
+                round_number = int(round_str)
+                
+                # Collect layout variants (from ALL cached entries)
+                layout_variants, layout_years = _collect_layout_variants(track, cached_entry.get("layout_signature", ""))
+                
+                # Find winner for this specific event
+                winner = next((w for w in winners if w.get("year") == year and w.get("round") == round_number), None)
+                
+                # Update entry with metadata
+                cached_entry["winners"] = winners
+                cached_entry["winner"] = winner
+                cached_entry["layout_variants"] = layout_variants
+                cached_entry["layout_years"] = layout_years
+                
+                modified = True
+                enhanced_entries += 1
+                track_result["enhanced"] += 1
+                
+            except Exception as exc:
+                print(f"[ENHANCE ERROR] {track_name} {entry_key}: {str(exc)}")
+        
+        # Save updated cache bundle
+        if modified:
+            _store_track_cache_bundle(track_key, cache_bundle)
+            enhanced_tracks += 1
+            print(f"[ENHANCE] {track_name}: Enhanced {track_result['enhanced']} entries")
+        
+        results.append(track_result)
+    
+    print("\n" + "="*60)
+    print(f"[ENHANCE] Completed! {enhanced_tracks} tracks enhanced, {enhanced_entries} total entries updated")
+    print("="*60 + "\n")
+    
+    return {
+        "status": "completed",
+        "summary": {
+            "enhanced_tracks": enhanced_tracks,
+            "enhanced_entries": enhanced_entries,
+            "skipped_tracks": skipped_tracks
+        },
+        "tracks": results
+    }
+
+
 @router.get("/tracks/cache-status")
 def check_cache_status() -> Dict[str, Any]:
     """Check which tracks have cache files"""
