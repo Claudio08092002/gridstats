@@ -344,7 +344,14 @@ def _track_cache_entry_key(year: int, round_number: int) -> str:
     return f"{int(year)}-{int(round_number)}"
 
 
-def _sanitize_map_payload(payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def _sanitize_map_payload(payload: Dict[str, Any], include_metadata: bool = False) -> Optional[Dict[str, Any]]:
+    """
+    Sanitize track map payload for caching.
+    
+    Args:
+        payload: Raw track map data
+        include_metadata: If True, include winners, layout_variants, and layout_years for frontend
+    """
     if not isinstance(payload, dict):
         return None
     track_points = payload.get("track") or []
@@ -365,6 +372,18 @@ def _sanitize_map_payload(payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         sanitized["round"] = int(payload.get("round"))
     except Exception:
         pass
+    
+    # Include metadata for enhanced frontend cache
+    if include_metadata:
+        if "winners" in payload:
+            sanitized["winners"] = deepcopy(payload.get("winners"))
+        if "winner" in payload:
+            sanitized["winner"] = deepcopy(payload.get("winner"))
+        if "layout_variants" in payload:
+            sanitized["layout_variants"] = deepcopy(payload.get("layout_variants"))
+        if "layout_years" in payload:
+            sanitized["layout_years"] = deepcopy(payload.get("layout_years"))
+    
     return sanitized
 
 
@@ -1029,15 +1048,19 @@ def check_cache_status() -> Dict[str, Any]:
 
 
 @router.get("/tracks/warmup")
-def warmup_all_tracks() -> Dict[str, Any]:
+def warmup_all_tracks(enhanced: bool = True) -> Dict[str, Any]:
     """
     Pre-populate cache for ALL tracks and ALL layouts.
     This allows the app to work completely offline (like driver comparison).
+    
+    Args:
+        enhanced: If True, also populate winners and layout metadata for frontend
+    
     Call this endpoint manually before deployment to ensure all cache files are populated.
-    Just open http://localhost:8000/f1/tracks/warmup in your browser.
+    Just open http://localhost:8000/api/f1/tracks/warmup in your browser.
     """
     print("\n" + "="*60)
-    print("[WARMUP] Starting track cache warmup...")
+    print(f"[WARMUP] Starting track cache warmup (enhanced={enhanced})...")
     print("="*60 + "\n")
     # Use _load_track_index instead of list_tracks to get events
     tracks = _load_track_index(refresh=False)
@@ -1047,6 +1070,7 @@ def warmup_all_tracks() -> Dict[str, Any]:
     total_events = 0
     cached_events = 0
     loaded_events = 0
+    enhanced_events = 0
     failed_events = 0
     
     results = []
@@ -1063,6 +1087,7 @@ def warmup_all_tracks() -> Dict[str, Any]:
             "total_events": len(events),
             "loaded": 0,
             "cached": 0,
+            "enhanced": 0,
             "failed": 0,
             "errors": []
         }
@@ -1074,10 +1099,21 @@ def warmup_all_tracks() -> Dict[str, Any]:
             try:
                 # Try cache first
                 cached = _load_cached_map_entry(track_key, year, round_number)
-                if cached:
+                if cached and not enhanced:
                     cached_events += 1
                     track_result["cached"] += 1
                     continue
+                
+                if cached and enhanced:
+                    # Check if cache already has metadata
+                    has_metadata = (
+                        cached.get("winners") is not None or
+                        cached.get("layout_variants") is not None
+                    )
+                    if has_metadata:
+                        cached_events += 1
+                        track_result["cached"] += 1
+                        continue
                 
                 # Load from FastF1 and cache it
                 map_data, _, _ = _load_track_map_with_fallback(
@@ -1087,28 +1123,55 @@ def warmup_all_tracks() -> Dict[str, Any]:
                     refresh=False, 
                     track_key_hint=track_key
                 )
-                loaded_events += 1
-                track_result["loaded"] += 1
+                
+                if enhanced:
+                    # Add metadata (winners, layout_variants, layout_years)
+                    finalized = _finalize_map_payload(map_data, track, include_layouts=True)
+                    # Re-save with metadata
+                    sanitized_enhanced = _sanitize_map_payload(finalized, include_metadata=True)
+                    if sanitized_enhanced:
+                        src_year = sanitized_enhanced.get("year", year)
+                        src_round = sanitized_enhanced.get("round", round_number)
+                        _store_cached_map_entry(track_key, src_year, src_round, sanitized_enhanced)
+                        enhanced_events += 1
+                        track_result["enhanced"] += 1
+                        print(f"[WARMUP] Enhanced {track_key} {year}-{round_number} with metadata")
+                    else:
+                        loaded_events += 1
+                        track_result["loaded"] += 1
+                else:
+                    loaded_events += 1
+                    track_result["loaded"] += 1
                 
             except Exception as exc:
                 failed_events += 1
                 track_result["failed"] += 1
-                track_result["errors"].append(f"{year}-{round_number}: {str(exc)}")
+                error_msg = f"{year}-{round_number}: {str(exc)}"
+                track_result["errors"].append(error_msg)
+                print(f"[WARMUP ERROR] {track_name} {error_msg}")
         
         results.append(track_result)
-        print(f"[WARMUP] {track_name}: {track_result['loaded']} loaded, {track_result['cached']} cached, {track_result['failed']} failed")
+        if enhanced:
+            print(f"[WARMUP] {track_name}: {track_result['enhanced']} enhanced, {track_result['loaded']} loaded, {track_result['cached']} cached, {track_result['failed']} failed")
+        else:
+            print(f"[WARMUP] {track_name}: {track_result['loaded']} loaded, {track_result['cached']} cached, {track_result['failed']} failed")
     
     print("\n" + "="*60)
-    print(f"[WARMUP] Completed! {loaded_events} newly loaded, {cached_events} already cached, {failed_events} failed")
+    if enhanced:
+        print(f"[WARMUP] Completed! {enhanced_events} enhanced, {loaded_events} loaded, {cached_events} cached, {failed_events} failed")
+    else:
+        print(f"[WARMUP] Completed! {loaded_events} newly loaded, {cached_events} already cached, {failed_events} failed")
     print("="*60 + "\n")
     
     return {
         "status": "completed",
+        "mode": "enhanced" if enhanced else "basic",
         "summary": {
             "total_tracks": total_tracks,
             "total_events": total_events,
             "already_cached": cached_events,
             "newly_loaded": loaded_events,
+            "enhanced_with_metadata": enhanced_events if enhanced else 0,
             "failed": failed_events
         },
         "tracks": results

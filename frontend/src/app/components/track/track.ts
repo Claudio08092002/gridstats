@@ -295,11 +295,8 @@ export class TrackComponent implements OnInit, OnDestroy {
             const key = `${roundRef.year}-${roundRef.round}`;
             const entry = bundle.entries[key];
             if (entry && entry.track) {
-              // Merge the cached entry into a TrackMapResponse-like object.  The
-              // backend cache bundles store only the sanitized payload without
-              // winners or layout variants.  If includeLayouts is requested
-              // here, the UI can still display the track map; other fields
-              // will simply be empty arrays.
+              // Merge the cached entry into a TrackMapResponse-like object.
+              // Enhanced cache files now include winners, layout_variants, and layout_years!
               const fromBundle: TrackMapResponse = {
                 track: entry.track,
                 corners: entry.corners || [],
@@ -307,10 +304,11 @@ export class TrackComponent implements OnInit, OnDestroy {
                 layout_label: entry.layout_label,
                 layout_signature: entry.layout_signature,
                 circuit_name: entry.circuit_name,
-                winners: [],
-                winner: null,
-                layout_variants: [],
-                layout_years: entry.year ? [entry.year] : [],
+                // Use cached metadata if available (from enhanced warmup)
+                winners: entry.winners || [],
+                winner: entry.winner || null,
+                layout_variants: entry.layout_variants || [],
+                layout_years: entry.layout_years || (entry.year ? [entry.year] : []),
               };
               // Persist to localStorage for faster future access
               this.saveToCache(roundRef.year, roundRef.round, fromBundle);
@@ -319,10 +317,17 @@ export class TrackComponent implements OnInit, OnDestroy {
               this.selectedRound = roundRef;
               this.selectedRoundKey = `${roundRef.year}-${roundRef.round}`;
               this.trackMap = fromBundle;
-              this.layoutVariants = [];
+              this.layoutVariants = fromBundle.layout_variants || [];
               this.layoutYears = fromBundle.layout_years || [];
-              this.winners = [];
-              this.selectedVariantSignature = fromBundle.layout_signature || null;
+              this.winners = fromBundle.winners || [];
+              // Update selected layout signature
+              if (fromBundle.layout_signature) {
+                this.selectedVariantSignature = fromBundle.layout_signature;
+              } else if (this.layoutVariants.length) {
+                this.selectedVariantSignature = this.layoutVariants[0].layout_signature;
+              } else {
+                this.selectedVariantSignature = null;
+              }
               this.drawTrackMap(fromBundle);
               return;
             }

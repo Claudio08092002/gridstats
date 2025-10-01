@@ -25,15 +25,18 @@ Copy the backend cache files to the frontend assets folder so they're bundled wi
 
 ## How to Deploy
 
-### Step 1: Ensure Cache is Populated
+### Step 1: Ensure Enhanced Cache is Populated
 ```powershell
 # Start backend locally
 cd backend
 uvicorn app.main:app --reload
 
-# In browser, go to: http://localhost:8000/api/f1/tracks/warmup
-# Wait 5-15 minutes for all tracks to cache
+# In browser, go to: http://localhost:8000/api/f1/tracks/warmup?enhanced=true
+# This populates cache with winners, layout variants, and all metadata
+# Wait 10-20 minutes for all tracks to cache with enhanced data
 ```
+
+**Important:** Use `?enhanced=true` to include winners, layout variants, and layout years in the cache files. Without this parameter, the frontend won't show recent winners or layout options!
 
 ### Step 2: Copy Cache to Frontend
 ```powershell
