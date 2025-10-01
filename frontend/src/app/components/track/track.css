@@ -1,3 +1,10 @@
+/*
+  Modified styling for the track component.
+  - Hide the layout chip that previously displayed the layout label.
+  - Improve the presentation of recent winners with a responsive grid layout and
+    subtle card styling.
+*/
+
 :root {
   --ring: #2a3548;
   --panel: #12161f;
@@ -109,19 +116,19 @@ select:focus {
   padding: 12px 24px 0;
   display: flex;
   justify-content: space-between;
+  justify-content: right;
   align-items: center;
   flex-wrap: wrap;
   gap: 12px;
   color: var(--text);
 }
 
+/*
+  Hide the layout chip entirely to remove the display of the layout label under
+  the track name.  The remaining layout details still display length and years.
+*/
 .layout-chip {
-  background: rgba(56, 189, 248, 0.12);
-  color: var(--accent);
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  display: none;
 }
 
 .layout-meta {
@@ -170,6 +177,12 @@ select:focus {
   background: rgba(70, 12, 12, 0.68);
 }
 
+/*
+  Recent winners: present in a responsive grid.  The list uses CSS grid
+  to automatically flow items into multiple columns depending on available
+  width.  Each list item is styled like a small card to improve visual
+  hierarchy.
+*/
 .winner-list {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding: 20px 24px;
@@ -189,15 +202,21 @@ select:focus {
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 8px;
+  gap: 12px;
+  /* Grid auto-fit ensures responsive columns. Each card will be at least
+     220px wide and will expand to fill the available space. */
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
 .winner-list li {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 12px;
   color: var(--text);
   font-size: 0.95rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  padding: 8px 12px;
 }
 
 .winner-list .year {
@@ -206,12 +225,18 @@ select:focus {
   min-width: 52px;
 }
 
+.winner-list .winner-info {
+  display: flex;
+  flex-direction: column;
+}
+
 .winner-list .name {
   font-weight: 500;
 }
 
 .winner-list .team {
   color: var(--muted);
+  font-size: 0.85rem;
 }
 
 .error {

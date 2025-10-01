@@ -670,12 +670,17 @@ def _load_track_map_core(track_key: str, year: int, round_number: int, refresh: 
     if not refresh:
         cached = _load_cached_map_entry(track_key, year, round_number)
         if cached:
+            print(f"[CACHE HIT] Loaded {track_key} {year}-{round_number} from cache")
             return cached
+        print(f"[CACHE MISS] Building {track_key} {year}-{round_number} from FastF1")
+    else:
+        print(f"[REFRESH] Rebuilding {track_key} {year}-{round_number} from FastF1")
     data = _build_track_map_from_source(year, round_number)
     sanitized = _sanitize_map_payload(data) or data
     src_year = sanitized.get("year", year) if isinstance(sanitized, dict) else year
     src_round = sanitized.get("round", round_number) if isinstance(sanitized, dict) else round_number
     _store_cached_map_entry(track_key, src_year, src_round, sanitized if isinstance(sanitized, dict) else data)
+    print(f"[CACHE SAVE] Saved {track_key} {src_year}-{src_round} to cache")
     return sanitized if isinstance(sanitized, dict) else data
 
 
@@ -863,18 +868,36 @@ def _collect_winners(track_entry: Optional[Dict[str, Any]]) -> List[Dict[str, An
 
 
 def _collect_layout_variants(track_entry: Optional[Dict[str, Any]], current_signature: str) -> Tuple[List[Dict[str, Any]], List[int]]:
+    """
+    Collect layout variants from CACHE ONLY - no HTTP requests.
+    This ensures the track maps work completely offline like driver comparison.
+    """
     if not track_entry:
         return [], []
+    
+    track_key = track_entry.get("key")
+    if not track_key:
+        return [], []
+    
+    # Load cache bundle - ONLY use cached data
+    cache_bundle, _ = _load_track_cache_bundle(track_key)
+    cached_entries = cache_bundle.get("entries", {}) if isinstance(cache_bundle, dict) else {}
+    
     variants: Dict[str, Dict[str, Any]] = {}
+    
+    # Only process events that exist in cache - skip missing ones silently
     for event in track_entry.get("events", []):
         year = int(event.get("year"))
         round_number = int(event.get("round"))
-        try:
-            map_data, _, _ = _load_track_map_with_fallback(year, round_number, track_entry, refresh=False, track_key_hint=track_entry.get("key") if track_entry else None)
-        except HTTPException as exc:  # pragma: no cover - fastf1 dependent
-            if exc.status_code == 404:
-                continue
-            raise
+        entry_key = f"{year}-{round_number}"
+        
+        # Check if this event is cached
+        cached_entry = cached_entries.get(entry_key)
+        if not cached_entry or not isinstance(cached_entry, dict):
+            # Skip events not in cache - no HTTP requests
+            continue
+        
+        map_data = cached_entry
         signature = map_data.get("layout_signature") or f"{year}:{round_number}"
         info = variants.setdefault(signature, {
             "layout_signature": signature,
@@ -956,6 +979,93 @@ def get_track_map(year: int, round: int, refresh: bool = False, include_layouts:
         trimmed["layout_variants"] = []
         return trimmed
     return enriched
+
+
+@router.get("/tracks/warmup")
+def warmup_all_tracks() -> Dict[str, Any]:
+    """
+    Pre-populate cache for ALL tracks and ALL layouts.
+    This allows the app to work completely offline (like driver comparison).
+    Call this endpoint manually before deployment to ensure all cache files are populated.
+    Just open http://localhost:8000/f1/tracks/warmup in your browser.
+    """
+    print("\n" + "="*60)
+    print("[WARMUP] Starting track cache warmup...")
+    print("="*60 + "\n")
+    # Use _load_track_index instead of list_tracks to get events
+    tracks = _load_track_index(refresh=False)
+    print(f"[WARMUP] Found {len(tracks)} tracks to process\n")
+    
+    total_tracks = len(tracks)
+    total_events = 0
+    cached_events = 0
+    loaded_events = 0
+    failed_events = 0
+    
+    results = []
+    
+    for track in tracks:
+        track_key = track.get("key")
+        track_name = track.get("display_name", track_key)
+        events = track.get("events", [])
+        total_events += len(events)
+        
+        track_result = {
+            "track": track_name,
+            "track_key": track_key,
+            "total_events": len(events),
+            "loaded": 0,
+            "cached": 0,
+            "failed": 0,
+            "errors": []
+        }
+        
+        for event in events:
+            year = int(event.get("year"))
+            round_number = int(event.get("round"))
+            
+            try:
+                # Try cache first
+                cached = _load_cached_map_entry(track_key, year, round_number)
+                if cached:
+                    cached_events += 1
+                    track_result["cached"] += 1
+                    continue
+                
+                # Load from FastF1 and cache it
+                map_data, _, _ = _load_track_map_with_fallback(
+                    year, 
+                    round_number, 
+                    track, 
+                    refresh=False, 
+                    track_key_hint=track_key
+                )
+                loaded_events += 1
+                track_result["loaded"] += 1
+                
+            except Exception as exc:
+                failed_events += 1
+                track_result["failed"] += 1
+                track_result["errors"].append(f"{year}-{round_number}: {str(exc)}")
+        
+        results.append(track_result)
+        print(f"[WARMUP] {track_name}: {track_result['loaded']} loaded, {track_result['cached']} cached, {track_result['failed']} failed")
+    
+    print("\n" + "="*60)
+    print(f"[WARMUP] Completed! {loaded_events} newly loaded, {cached_events} already cached, {failed_events} failed")
+    print("="*60 + "\n")
+    
+    return {
+        "status": "completed",
+        "summary": {
+            "total_tracks": total_tracks,
+            "total_events": total_events,
+            "already_cached": cached_events,
+            "newly_loaded": loaded_events,
+            "failed": failed_events
+        },
+        "tracks": results
+    }
 
 
 def _normalize_driver_name(name: str) -> str:

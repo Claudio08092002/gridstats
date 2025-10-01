@@ -1,6 +1,10 @@
-﻿import { Component, OnDestroy, OnInit, inject, PLATFORM_ID } from '@angular/core';
+// Modified TrackComponent with localStorage caching
+
+import { Component, OnDestroy, OnInit, inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { HttpClientModule } from '@angular/common/http';
 import {
   ApiService,
   TrackInfo,
@@ -16,7 +20,7 @@ import * as d3 from 'd3';
 @Component({
   selector: 'app-track',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, HttpClientModule],
   templateUrl: './track.html',
   styleUrls: ['./track.css'],
 })
@@ -24,6 +28,9 @@ export class TrackComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
+
+  // Inject the HttpClient to allow loading cached files from the assets
+  private http = inject(HttpClient);
 
   currentYear = new Date().getFullYear();
 
@@ -42,6 +49,64 @@ export class TrackComponent implements OnInit, OnDestroy {
 
   loading = false;
   error: string | null = null;
+
+  /**
+   * Generates a cache key for storing track map data in localStorage.  The
+   * key includes the season year and round number to ensure unique
+   * entries per event.  Keys are prefixed to avoid clashing with other
+   * application data in storage.
+   */
+  private getCacheKey(year: number, round: number): string {
+    // Prefix cache entries with the tracks_cache namespace so that
+    // multiple components or libraries can safely coexist in
+    // localStorage without key collisions.  Include the selected track
+    // key when available.  Without the track key, caches for different
+    // circuits might collide when they share the same year/round numbers
+    // (e.g. two events both being round 1 in 2024).  Using both the
+    // track key and the year/round ensures uniqueness.
+    const trackKey = this.selectedKey ?? '';
+    return `tracks_cache_${trackKey}_${year}_${round}`;
+  }
+
+  /**
+   * Attempt to load cached track map data from localStorage.  This method
+   * returns `null` when no cached entry exists or when executed in a
+   * non‑browser environment (e.g. during SSR).
+   */
+  private loadFromCache(year: number, round: number): TrackMapResponse | null {
+    if (!this.isBrowser) {
+      return null;
+    }
+    try {
+      const key = this.getCacheKey(year, round);
+      const raw = window?.localStorage?.getItem(key);
+      if (!raw) {
+        return null;
+      }
+      return JSON.parse(raw) as TrackMapResponse;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Persist the given track map response into localStorage.  Any errors
+   * encountered during serialization or storage are silently ignored.  The
+   * cached payload includes layout variants, winners and other metadata so
+   * that subsequent requests can be served entirely from the client cache.
+   */
+  private saveToCache(year: number, round: number, data: TrackMapResponse): void {
+    if (!this.isBrowser) {
+      return;
+    }
+    try {
+      const key = this.getCacheKey(year, round);
+      const payload = JSON.stringify(data);
+      window?.localStorage?.setItem(key, payload);
+    } catch {
+      // Ignore storage errors (e.g. quota exceeded)
+    }
+  }
 
   ngOnInit(): void {
     if (!this.isBrowser) {
@@ -129,8 +194,11 @@ export class TrackComponent implements OnInit, OnDestroy {
     if (!signature) {
       return;
     }
-    // Don't return early if same signature - allow redraw
-    const needsReload = this.selectedVariantSignature !== signature;
+    // Always update the variant and reload the map.  Even when the
+    // signature matches the current selection the user might be toggling
+    // between different rounds of the same layout.  For example, Abu
+    // Dhabi has multiple versions of its layout with subtle corner
+    // differences that share a signature once quantized in the backend.
     this.selectedVariantSignature = signature;
     const variant = this.layoutVariants.find((item) => item.layout_signature === signature);
     if (!variant) {
@@ -138,14 +206,9 @@ export class TrackComponent implements OnInit, OnDestroy {
     }
     const targetRound = this.pickLatestRound(variant.rounds);
     if (targetRound) {
-      if (needsReload) {
-        this.loadTrackMap(targetRound, true);
-      } else {
-        // Redraw current map even if same signature
-        if (this.trackMap) {
-          this.drawTrackMap(this.trackMap);
-        }
-      }
+      // Always include layout information when reloading to refresh
+      // variants and years even if the cached payload exists.
+      this.loadTrackMap(targetRound, true);
     }
   }
 
@@ -193,6 +256,100 @@ export class TrackComponent implements OnInit, OnDestroy {
     if (!this.isBrowser) {
       return;
     }
+    // Attempt to serve from client cache first.  If a cached entry is found
+    // the map is drawn immediately and network requests are skipped.
+    const cached = this.loadFromCache(roundRef.year, roundRef.round);
+    if (cached) {
+      this.loading = false;
+      this.error = null;
+      this.selectedRound = roundRef;
+      this.selectedRoundKey = `${roundRef.year}-${roundRef.round}`;
+      this.trackMap = cached;
+      this.layoutVariants = cached.layout_variants ?? [];
+      this.layoutYears = cached.layout_years ?? [];
+      this.winners = cached.winners ?? [];
+      // Update selected layout signature
+      if (cached.layout_signature) {
+        this.selectedVariantSignature = cached.layout_signature;
+      } else if (this.layoutVariants.length) {
+        this.selectedVariantSignature = this.layoutVariants[0].layout_signature;
+      } else {
+        this.selectedVariantSignature = null;
+      }
+      this.drawTrackMap(cached);
+      return;
+    }
+
+    // Next, attempt to load from the precomputed cache stored in assets/tracks_cache.
+    // This allows offline viewing on production deployments where external API
+    // calls are not possible.  If the file exists and contains the requested
+    // round entry, use it and avoid any HTTP calls to the backend.  The file
+    // structure corresponds to the backend track cache bundle: a JSON object
+    // with a `entries` dictionary keyed by "<year>-<round>".
+    const sanitizedKey = this.sanitizeCacheKey(this.selectedKey ?? '');
+    if (sanitizedKey) {
+      const bundleUrl = `assets/tracks_cache/trackmap_${sanitizedKey}.json`;
+      this.http.get<any>(bundleUrl).subscribe({
+        next: (bundle) => {
+          if (bundle && typeof bundle === 'object' && bundle.entries) {
+            const key = `${roundRef.year}-${roundRef.round}`;
+            const entry = bundle.entries[key];
+            if (entry && entry.track) {
+              // Merge the cached entry into a TrackMapResponse-like object.  The
+              // backend cache bundles store only the sanitized payload without
+              // winners or layout variants.  If includeLayouts is requested
+              // here, the UI can still display the track map; other fields
+              // will simply be empty arrays.
+              const fromBundle: TrackMapResponse = {
+                track: entry.track,
+                corners: entry.corners || [],
+                layout_length: entry.layout_length,
+                layout_label: entry.layout_label,
+                layout_signature: entry.layout_signature,
+                circuit_name: entry.circuit_name,
+                winners: [],
+                winner: null,
+                layout_variants: [],
+                layout_years: entry.year ? [entry.year] : [],
+              };
+              // Persist to localStorage for faster future access
+              this.saveToCache(roundRef.year, roundRef.round, fromBundle);
+              this.loading = false;
+              this.error = null;
+              this.selectedRound = roundRef;
+              this.selectedRoundKey = `${roundRef.year}-${roundRef.round}`;
+              this.trackMap = fromBundle;
+              this.layoutVariants = [];
+              this.layoutYears = fromBundle.layout_years || [];
+              this.winners = [];
+              this.selectedVariantSignature = fromBundle.layout_signature || null;
+              this.drawTrackMap(fromBundle);
+              return;
+            }
+          }
+          // Not found in bundle; fall back to API call below
+          this._loadTrackMapViaApi(roundRef, includeLayouts);
+        },
+        error: () => {
+          // Bundle file not found or invalid; fall back to API call
+          this._loadTrackMapViaApi(roundRef, includeLayouts);
+        },
+      });
+      return;
+    }
+
+    // If we cannot determine a sanitized key, fall back to API call.
+    this._loadTrackMapViaApi(roundRef, includeLayouts);
+  }
+
+  /**
+   * Fallback logic to load a track map from the backend API when no local or
+   * asset cache entry could be used.  This function contains the original
+   * implementation for network requests and persists results to the client
+   * cache.  It is extracted into a helper to avoid deeply nested
+   * subscribe/callbacks in loadTrackMap.
+   */
+  private _loadTrackMapViaApi(roundRef: TrackRoundRef, includeLayouts: boolean): void {
     this.loading = true;
     this.error = null;
     this.selectedRound = roundRef;
@@ -217,12 +374,39 @@ export class TrackComponent implements OnInit, OnDestroy {
           this.selectedVariantSignature = null;
         }
         this.drawTrackMap(map);
+        // Persist the payload in client cache.  Save under both the requested
+        // year/round and the actual year/round reported by the backend as
+        // described in the loadTrackMap comments.
+        this.saveToCache(roundRef.year, roundRef.round, map);
+        const saveYear = (map as any).year ?? roundRef.year;
+        const saveRound = (map as any).round ?? roundRef.round;
+        if (saveYear !== roundRef.year || saveRound !== roundRef.round) {
+          this.saveToCache(saveYear, saveRound, map);
+        }
       },
       error: (err) => {
         this.loading = false;
         this.error = err?.error?.detail ?? err?.message ?? 'Failed to load track map';
       },
     });
+  }
+
+  /**
+   * Sanitize a track key to mirror the backend's cache file naming convention.
+   * This ensures we construct the correct filename when attempting to load
+   * trackmap bundles from the assets folder.  Non‑alphanumeric characters
+   * become underscores and multiple underscores collapse.
+   */
+  private sanitizeCacheKey(raw: string): string {
+    if (!raw) {
+      return '';
+    }
+    const normalized = raw
+      .normalize('NFKD')
+      .replace(/[^a-zA-Z0-9]+/g, '_')
+      .toLowerCase()
+      .replace(/^_+|_+$/g, '');
+    return normalized || '';
   }
 
   private drawTrackMap(trackMapData: TrackMapResponse): void {
@@ -245,15 +429,15 @@ export class TrackComponent implements OnInit, OnDestroy {
     const trackData: TrackPoint[] = trackMapData.track ?? [];
     const cornerData: TrackCorner[] = trackMapData.corners ?? [];
 
-    console.log('[TrackMap] Drawing track map:', {
-      trackPoints: trackData.length,
-      corners: cornerData.length,
-      layoutSignature: trackMapData.layout_signature,
-      layoutLabel: trackMapData.layout_label,
-    });
+    // Remove verbose logging in production.  Previously we logged details
+    // about the number of track points, corners and layout metadata
+    // whenever a map was drawn. These logs cluttered the console and
+    // provided little value once the component was working reliably.
 
     if (!trackData.length) {
-      console.warn('[TrackMap] No track data available');
+      // Nothing to draw when no coordinate data is present. Simply return
+      // without logging a warning, since this scenario occurs naturally
+      // when switching layouts or loading incomplete data.
       return;
     }
 
@@ -328,17 +512,17 @@ export class TrackComponent implements OnInit, OnDestroy {
       .ease(d3.easeCubicInOut)
       .attr('stroke-dashoffset', 0);
 
-    console.log('[TrackMap] Path animated, checking corners:', {
-      cornerCount: cornerData.length,
-      hasCorners: cornerData.length > 0,
-    });
+    // The path animation completes here. In earlier revisions we emitted
+    // diagnostic logs about the number of corners, but this is no
+    // longer necessary.
 
     if (!cornerData.length) {
-      console.warn('[TrackMap] No corner data available - skipping corner rendering');
+      // If the layout contains no corner metadata just return early. The
+      // animation of the track outline has already completed.
       return;
     }
 
-    console.log('[TrackMap] Starting corner rendering for', cornerData.length, 'corners');
+    // Start rendering the corner markers and labels. Removed verbose logging.
 
     const distance = (x1: number, y1: number, x2: number, y2: number) => Math.hypot(x2 - x1, y2 - y1);
     let runningDistance = 0;
@@ -413,7 +597,7 @@ export class TrackComponent implements OnInit, OnDestroy {
       }
     });
 
-    console.log('[TrackMap] Finished rendering', cornerData.length, 'corners');
+    // Corner rendering complete. No log emission.
   }
 
   private findTimeToReachDistance(distance: number, totalLength: number, animationDuration: number): number {
@@ -444,4 +628,3 @@ export class TrackComponent implements OnInit, OnDestroy {
     return Math.min(Math.max(tGuess, 0), 1) * animationDuration;
   }
 }
-
