@@ -20,11 +20,12 @@ RUN pip install --no-cache-dir --only-binary=:all: -r requirements.txt
 COPY backend/ /app/
 
 # Verify cache directories were copied (for debugging)
-RUN echo "Checking cache directories..." && \
-    ls -la /app/season_cache/ && \
-    ls -la /app/tracks_cache/ && \
+RUN echo "=== Checking cache directories ===" && \
+    (ls -la /app/season_cache/ 2>/dev/null || echo "season_cache not found") && \
+    (ls -la /app/tracks_cache/ 2>/dev/null || echo "tracks_cache not found") && \
     echo "Season cache files: $(ls /app/season_cache/*.json 2>/dev/null | wc -l)" && \
-    echo "Track cache files: $(ls /app/tracks_cache/*.json 2>/dev/null | wc -l)"
+    echo "Track cache files: $(ls /app/tracks_cache/*.json 2>/dev/null | wc -l)" && \
+    echo "==================================="
 
 # Cache paths
 # The season_cache and tracks_cache directories are bundled in the image
