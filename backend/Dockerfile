@@ -19,11 +19,19 @@ RUN pip install --no-cache-dir --only-binary=:all: -r requirements.txt
 # Copy the application code into the image
 COPY backend/ /app/
 
+# Verify cache directories were copied (for debugging)
+RUN echo "Checking cache directories..." && \
+    ls -la /app/season_cache/ && \
+    ls -la /app/tracks_cache/ && \
+    echo "Season cache files: $(ls /app/season_cache/*.json 2>/dev/null | wc -l)" && \
+    echo "Track cache files: $(ls /app/tracks_cache/*.json 2>/dev/null | wc -l)"
+
 # Cache paths
-# Only persist the FastF1 cache between container runs.  The season cache
-# directory is left inside the image so that the bundled JSON files remain
-# available at runtime.  Declaring it as a volume would overwrite the
-# in-image data with an empty directory.
+# The season_cache and tracks_cache directories are bundled in the image
+# with pre-generated JSON files for offline operation. Only the FastF1 cache
+# (raw F1 telemetry data) is persisted as a volume between container runs.
+# DO NOT declare season_cache or tracks_cache as volumes - it would overwrite
+# the in-image cache files with empty directories.
 ENV FASTF1_CACHE=/data/fastf1_cache
 VOLUME ["/data/fastf1_cache"]
 
