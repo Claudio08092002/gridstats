@@ -963,22 +963,69 @@ def get_tracks(refresh: bool = False) -> List[Dict[str, Any]]:
 
 @router.get("/trackmap/{year}/{round}")
 def get_track_map(year: int, round: int, refresh: bool = False, include_layouts: bool = Query(True, description="Include layout variants across seasons")) -> Dict[str, Any]:
-    track_entry = _find_track_entry(year, round)
-    track_key_hint = track_entry.get("key") if track_entry else None
-    base, resolved_entry, _ = _load_track_map_with_fallback(
-        year,
-        round,
-        track_entry,
-        refresh=refresh,
-        track_key_hint=track_key_hint,
-    )
-    final_entry = resolved_entry or track_entry or _find_track_entry(base.get("year", year), base.get("round", round))
-    enriched = _finalize_map_payload(base, final_entry, include_layouts=True)
-    if not include_layouts:
-        trimmed = dict(enriched)
-        trimmed["layout_variants"] = []
-        return trimmed
-    return enriched
+    try:
+        track_entry = _find_track_entry(year, round)
+        track_key_hint = track_entry.get("key") if track_entry else None
+        
+        print(f"[GET TRACKMAP] Requested {year}-{round}, track_key_hint={track_key_hint}")
+        
+        base, resolved_entry, _ = _load_track_map_with_fallback(
+            year,
+            round,
+            track_entry,
+            refresh=refresh,
+            track_key_hint=track_key_hint,
+        )
+        final_entry = resolved_entry or track_entry or _find_track_entry(base.get("year", year), base.get("round", round))
+        enriched = _finalize_map_payload(base, final_entry, include_layouts=True)
+        
+        print(f"[GET TRACKMAP] Success for {year}-{round}")
+        
+        if not include_layouts:
+            trimmed = dict(enriched)
+            trimmed["layout_variants"] = []
+            return trimmed
+        return enriched
+    except Exception as e:
+        print(f"[GET TRACKMAP ERROR] Failed to load {year}-{round}: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise
+
+
+@router.get("/tracks/cache-status")
+def check_cache_status() -> Dict[str, Any]:
+    """Check which tracks have cache files"""
+    tracks = _load_track_index(refresh=False)
+    
+    status = []
+    for track in tracks:
+        track_key = track.get("key")
+        track_name = track.get("display_name", track_key)
+        cache_path = _trackmap_cache_path_for_track(track_key)
+        
+        events = track.get("events", [])
+        cached_count = 0
+        
+        if cache_path.exists():
+            cache_bundle = _read_json(cache_path)
+            if isinstance(cache_bundle, dict):
+                cached_entries = cache_bundle.get("entries", {})
+                cached_count = len(cached_entries)
+        
+        status.append({
+            "track": track_name,
+            "track_key": track_key,
+            "total_events": len(events),
+            "cached_events": cached_count,
+            "cache_file_exists": cache_path.exists(),
+            "cache_file_path": str(cache_path)
+        })
+    
+    return {
+        "total_tracks": len(tracks),
+        "tracks": status
+    }
 
 
 @router.get("/tracks/warmup")

@@ -13,6 +13,9 @@ services:
       - SEASON_MEM_TTL=21600
     volumes:
       - fastf1_cache:/data/fastf1_cache
+      # REMOVED: season_cache and tracks_cache volumes
+      # These must be bundled IN the Docker image, not mounted as volumes
+      # Mounting them would overwrite the cache files with empty directories
     ports:
       - "7500:8000"
     restart: unless-stopped
@@ -26,3 +29,4 @@ services:
 
 volumes:
   fastf1_cache:
+  # REMOVED: season_cache volume - not needed

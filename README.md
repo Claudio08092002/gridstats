@@ -78,15 +78,36 @@ npm start
 ```
 Frontend runs at: http://localhost:4200
 
-### Pre-populate Cache (Optional)
+### Pre-populate Cache for Offline Deployment
 
-For offline operation or faster loading, pre-populate all track data:
+For production deployments without internet access, you need to bundle track cache files with the frontend:
 
-1. Start the backend server
-2. Open in browser: http://localhost:8000/f1/tracks/warmup
-3. Wait 5-15 minutes for all tracks to cache
+1. **Start the backend and populate cache:**
+   ```bash
+   cd backend
+   uvicorn app.main:app --reload
+   ```
+   Then open: http://localhost:8000/f1/tracks/warmup
+   
+   Wait 5-15 minutes for all tracks to cache.
 
-This creates cache files in `backend/app/tracks_cache/` that allow the app to work completely offline.
+2. **Copy cache files to frontend assets:**
+   ```powershell
+   .\copy-cache-to-frontend.ps1
+   ```
+   
+   This copies cache files from `backend/app/tracks_cache/` to `frontend/public/assets/tracks_cache/` so they're bundled in the Angular build.
+
+3. **Rebuild frontend and Docker images:**
+   ```bash
+   cd frontend
+   npm run build
+   
+   # Rebuild Docker images with updated cache
+   docker-compose build
+   ```
+
+The app will now work **completely offline** - tracks load from bundled JSON files without any HTTP requests.
 
 ## Project Structure
 
