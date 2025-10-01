@@ -16,7 +16,7 @@
       >
         <option [ngValue]="null" disabled>— choose a track —</option>
         <option *ngFor="let track of tracks" [ngValue]="track.key">
-          {{ track.display_name }} ({{ track.latest_year }})
+          {{ track.country_code ? track.country_code + ' - ' : '' }}{{ track.display_name }}
         </option>
       </select>
     </div>

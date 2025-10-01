@@ -377,10 +377,13 @@ def _build_season_payload(year: int) -> Dict[str, Any]:
             if not code_val or pd.isna(code_val):
                 continue
             code = str(code_val).upper()
+            # Skip invalid driver codes (NaN, nan, None, empty strings)
+            if code in ['NAN', 'NONE', ''] or code.lower() == 'nan':
+                continue
             entry = results_by_driver.setdefault(code, _make_driver_entry(code))
 
             full_name = row.get("FullName") or row.get("BroadcastName") or row.get("Driver")
-            if full_name:
+            if full_name and not pd.isna(full_name):
                 entry["full_name"] = str(full_name)
             team_name = row.get("TeamName") or row.get("ConstructorName")
             if team_name:
@@ -428,6 +431,13 @@ def _build_season_payload(year: int) -> Dict[str, Any]:
 
     drivers_payload: Dict[str, Dict[str, Any]] = {}
     for code, entry in results_by_driver.items():
+        # Skip invalid driver codes
+        if code in ['NAN', 'NONE', ''] or code.lower() == 'nan':
+            continue
+        # Skip drivers with invalid full names
+        if not entry["full_name"] or entry["full_name"] in ['nan', 'NaN', 'None']:
+            continue
+            
         positions = entry.pop("positions")
         avg_finish = float(pd.Series(positions).mean()) if positions else None
         drivers_payload[code] = {
@@ -446,10 +456,16 @@ def _build_season_payload(year: int) -> Dict[str, Any]:
             "pole_rounds": entry["pole_rounds"],
         }
 
+    # Sort drivers alphabetically by first name
+    sorted_drivers = dict(sorted(
+        drivers_payload.items(),
+        key=lambda item: item[1]["full_name"].split()[0] if item[1]["full_name"] else item[0]
+    ))
+    
     return {
         "schema_version": SCHEMA_VERSION,
         "season": year,
-        "drivers": drivers_payload,
+        "drivers": sorted_drivers,
         "sprint_rounds": sorted(sprint_rounds),
     }
 
