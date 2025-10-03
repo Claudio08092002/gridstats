@@ -1,0 +1,159 @@
+﻿<div class="card">
+  <h1 class="page-title">Constructor Comparison</h1>
+  
+  <div class="controls">
+    <div class="field span-5">
+      <label for="constructor1">Constructor 1</label>
+      <select id="constructor1" [(ngModel)]="constructor1" class="select select--dark border" [disabled]="loading">
+        <option [ngValue]="null">— Select Constructor 1 —</option>
+        <option *ngFor="let key of constructorKeys" [ngValue]="key">{{ constructorMap[key].name }}</option>
+      </select>
+    </div>
+    
+    <div class="field span-5">
+      <label for="constructor2">Constructor 2</label>
+      <select id="constructor2" [(ngModel)]="constructor2" class="select select--dark border" [disabled]="loading">
+        <option [ngValue]="null">— Select Constructor 2 —</option>
+        <option *ngFor="let key of constructorKeys" [ngValue]="key">{{ constructorMap[key].name }}</option>
+      </select>
+    </div>
+    
+    <div class="field span-2">
+      <label>&nbsp;</label>
+      <button class="btn btn--primary" (click)="onCompare()" [disabled]="!constructor1 || !constructor2 || loading">Compare</button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading-message">
+    <div class="spinner"></div>
+    <p>Loading constructor data...</p>
+  </div>
+
+  <div *ngIf="errorMsg" class="error-message">{{ errorMsg }}</div>
+
+  <div *ngIf="compared && constructor1Data && constructor2Data" class="comparison-container">
+    <div class="stats-grid">
+      <div class="stat-row">
+        <div class="stat-value left" [style.color]="constructor1Data.team_color">{{ constructor1Data.total_points | number: '1.0-0' }}</div>
+        <div class="stat-label">Total Points</div>
+        <div class="stat-value right" [style.color]="constructor2Data.team_color">{{ constructor2Data.total_points | number: '1.0-0' }}</div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-value left" [style.color]="constructor1Data.team_color">{{ constructor1Data.wins }}</div>
+        <div class="stat-label">Wins</div>
+        <div class="stat-value right" [style.color]="constructor2Data.team_color">{{ constructor2Data.wins }}</div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-value left" [style.color]="constructor1Data.team_color">{{ constructor1Data.podiums }}</div>
+        <div class="stat-label">Podiums</div>
+        <div class="stat-value right" [style.color]="constructor2Data.team_color">{{ constructor2Data.podiums }}</div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-value left" [style.color]="constructor1Data.team_color">{{ constructor1Data.poles }}</div>
+        <div class="stat-label">Pole Positions</div>
+        <div class="stat-value right" [style.color]="constructor2Data.team_color">{{ constructor2Data.poles }}</div>
+      </div>
+
+      <div class="stat-row" *ngIf="constructor1Data.origin || constructor2Data.origin">
+        <div class="stat-value left" [style.color]="constructor1Data.team_color">{{ constructor1Data.origin || 'N/A' }}</div>
+        <div class="stat-label">Origin</div>
+        <div class="stat-value right" [style.color]="constructor2Data.team_color">{{ constructor2Data.origin || 'N/A' }}</div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-value left" [style.color]="constructor1Data.team_color">{{ constructor1Data.season_count }}</div>
+        <div class="stat-label">Season Entries</div>
+        <div class="stat-value right" [style.color]="constructor2Data.team_color">{{ constructor2Data.season_count }}</div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-value left" [style.color]="constructor1Data.team_color" style="cursor: pointer; position: relative;" (click)="toggleDriversList(1)" title="Click to see all drivers">
+          {{ constructor1Data.total_drivers }} <span style="font-size: 0.75rem; margin-left: 4px;">▼</span>
+          <div *ngIf="showDriversList1" class="drivers-dropdown" (click)="$event.stopPropagation()">
+            <div class="dropdown-header">All Drivers:</div>
+            <div class="driver-item" *ngFor="let driver of constructor1Data.drivers">{{ driver }}</div>
+          </div>
+        </div>
+        <div class="stat-label">Total Drivers</div>
+        <div class="stat-value right" [style.color]="constructor2Data.team_color" style="cursor: pointer; position: relative;" (click)="toggleDriversList(2)" title="Click to see all drivers">
+          {{ constructor2Data.total_drivers }} <span style="font-size: 0.75rem; margin-left: 4px;">▼</span>
+          <div *ngIf="showDriversList2" class="drivers-dropdown" (click)="$event.stopPropagation()">
+            <div class="dropdown-header">All Drivers:</div>
+            <div class="driver-item" *ngFor="let driver of constructor2Data.drivers">{{ driver }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-row best-result">
+        <div class="stat-value left small" [style.color]="constructor1Data.team_color">
+          <div class="best-result-display" [innerHTML]="getBestResultDisplay(constructor1Data.best_result)"></div>
+        </div>
+        <div class="stat-label">Best Result</div>
+        <div class="stat-value right small" [style.color]="constructor2Data.team_color">
+          <div class="best-result-display" [innerHTML]="getBestResultDisplay(constructor2Data.best_result)"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="charts-section">
+      <h2>Performance Over Time</h2>
+      <div class="chart-container"><canvas #pointsChart></canvas></div>
+      <div class="chart-grid">
+        <div class="chart-container"><canvas #winsChart></canvas></div>
+        <div class="chart-container"><canvas #podiumsChart></canvas></div>
+      </div>
+    </div>
+
+    <div class="driver-switches-section">
+      <h2>Driver Switches</h2>
+      <div class="switches-grid">
+        <div class="switches-card">
+          <h3 [style.color]="constructor1Data.team_color">{{ constructor1Data.name }}</h3>
+          <div class="switches-list">
+            <div *ngFor="let change of getDriverChanges(constructor1Data)" class="switch-item">
+              <div class="switch-year" [style.border-color]="constructor1Data.team_color">{{ change.year }}</div>
+              <div class="switch-details">
+                <div *ngFor="let driver of change.joined" class="driver-change joined">
+                  <span class="change-icon"></span>
+                  <span class="driver-name">{{ driver }}</span>
+                  <span class="change-label">joined</span>
+                </div>
+                <div *ngFor="let driver of change.left" class="driver-change left">
+                  <span class="change-icon"></span>
+                  <span class="driver-name">{{ driver }}</span>
+                  <span class="change-label">left</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="switches-card">
+          <h3 [style.color]="constructor2Data.team_color">{{ constructor2Data.name }}</h3>
+          <div class="switches-list">
+            <div *ngFor="let change of getDriverChanges(constructor2Data)" class="switch-item">
+              <div class="switch-year" [style.border-color]="constructor2Data.team_color">{{ change.year }}</div>
+              <div class="switch-details">
+                <div *ngFor="let driver of change.joined" class="driver-change joined">
+                  <span class="change-icon"></span>
+                  <span class="driver-name">{{ driver }}</span>
+                  <span class="change-label">joined</span>
+                </div>
+                <div *ngFor="let driver of change.left" class="driver-change left">
+                  <span class="change-icon"></span>
+                  <span class="driver-name">{{ driver }}</span>
+                  <span class="change-label">left</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="footer"> {{ currentYear }} GridStats</footer>

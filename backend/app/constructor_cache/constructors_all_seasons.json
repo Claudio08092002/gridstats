@@ -1,0 +1,1486 @@
+{
+  "constructors": {
+    "Ferrari": {
+      "name": "Ferrari",
+      "team_color": "#DC0000",
+      "total_points": 3427.5,
+      "wins": 19,
+      "podiums": 107,
+      "poles": 41,
+      "season_count": 8,
+      "seasons": [
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ],
+      "total_drivers": 6,
+      "drivers": [
+        "Carlos Sainz",
+        "Charles Leclerc",
+        "Kimi R\u00e4ikk\u00f6nen",
+        "Lewis Hamilton",
+        "Oliver Bearman",
+        "Sebastian Vettel"
+      ],
+      "drivers_by_year": {
+        "2018": [
+          "Kimi R\u00e4ikk\u00f6nen",
+          "Sebastian Vettel"
+        ],
+        "2019": [
+          "Charles Leclerc",
+          "Sebastian Vettel"
+        ],
+        "2020": [
+          "Charles Leclerc",
+          "Sebastian Vettel"
+        ],
+        "2021": [
+          "Carlos Sainz",
+          "Charles Leclerc"
+        ],
+        "2022": [
+          "Carlos Sainz",
+          "Charles Leclerc"
+        ],
+        "2023": [
+          "Carlos Sainz",
+          "Charles Leclerc"
+        ],
+        "2024": [
+          "Carlos Sainz",
+          "Charles Leclerc"
+        ],
+        "2025": [
+          "Charles Leclerc",
+          "Lewis Hamilton"
+        ]
+      },
+      "origin": "Italy",
+      "points_by_year": {
+        "2018": 571.0,
+        "2019": 504.0,
+        "2020": 131.0,
+        "2021": 323.5,
+        "2022": 554.0,
+        "2023": 406.0,
+        "2024": 652.0,
+        "2025": 286.0
+      },
+      "wins_by_year": {
+        "2018": 6,
+        "2019": 3,
+        "2022": 4,
+        "2023": 1,
+        "2024": 5
+      },
+      "podiums_by_year": {
+        "2018": 24,
+        "2019": 19,
+        "2020": 3,
+        "2021": 5,
+        "2022": 20,
+        "2023": 9,
+        "2024": 22,
+        "2025": 5
+      },
+      "best_result": {
+        "year": 2022,
+        "round": 1,
+        "event": "Bahrain Grand Prix",
+        "points": 44.0,
+        "drivers": [
+          {
+            "name": "Charles Leclerc",
+            "points": 26.0,
+            "position": 1.0
+          },
+          {
+            "name": "Carlos Sainz",
+            "points": 18.0,
+            "position": 2.0
+          }
+        ]
+      }
+    },
+    "Mercedes": {
+      "name": "Mercedes",
+      "team_color": "#00D2BE",
+      "total_points": 4262.5,
+      "wins": 54,
+      "podiums": 152,
+      "poles": 55,
+      "season_count": 8,
+      "seasons": [
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ],
+      "total_drivers": 5,
+      "drivers": [
+        "Andrea Kimi Antonelli",
+        "George Russell",
+        "Kimi Antonelli",
+        "Lewis Hamilton",
+        "Valtteri Bottas"
+      ],
+      "drivers_by_year": {
+        "2018": [
+          "Lewis Hamilton",
+          "Valtteri Bottas"
+        ],
+        "2019": [
+          "Lewis Hamilton",
+          "Valtteri Bottas"
+        ],
+        "2020": [
+          "Lewis Hamilton",
+          "Valtteri Bottas"
+        ],
+        "2021": [
+          "Lewis Hamilton",
+          "Valtteri Bottas"
+        ],
+        "2022": [
+          "George Russell",
+          "Lewis Hamilton"
+        ],
+        "2023": [
+          "George Russell",
+          "Lewis Hamilton"
+        ],
+        "2024": [
+          "George Russell",
+          "Lewis Hamilton"
+        ],
+        "2025": [
+          "George Russell",
+          "Kimi Antonelli"
+        ]
+      },
+      "origin": "Germany",
+      "points_by_year": {
+        "2018": 655.0,
+        "2019": 739.0,
+        "2020": 573.0,
+        "2021": 613.5,
+        "2022": 515.0,
+        "2023": 409.0,
+        "2024": 468.0,
+        "2025": 290.0
+      },
+      "wins_by_year": {
+        "2018": 11,
+        "2019": 15,
+        "2020": 13,
+        "2021": 9,
+        "2022": 1,
+        "2024": 4,
+        "2025": 1
+      },
+      "podiums_by_year": {
+        "2018": 25,
+        "2019": 32,
+        "2020": 25,
+        "2021": 28,
+        "2022": 17,
+        "2023": 8,
+        "2024": 9,
+        "2025": 8
+      },
+      "best_result": {
+        "year": 2019,
+        "round": 1,
+        "event": "Australian Grand Prix",
+        "points": 44.0,
+        "drivers": [
+          {
+            "name": "Valtteri Bottas",
+            "points": 26.0,
+            "position": 1.0
+          },
+          {
+            "name": "Lewis Hamilton",
+            "points": 18.0,
+            "position": 2.0
+          }
+        ]
+      }
+    },
+    "Red Bull Racing": {
+      "name": "Red Bull Racing",
+      "team_color": "#1E41FF",
+      "total_points": 3461.5,
+      "wins": 54,
+      "podiums": 114,
+      "poles": 43,
+      "season_count": 7,
+      "seasons": [
+        2018,
+        2019,
+        2020,
+        2021,
+        2023,
+        2024,
+        2025
+      ],
+      "total_drivers": 7,
+      "drivers": [
+        "Alexander Albon",
+        "Daniel Ricciardo",
+        "Liam Lawson",
+        "Max Verstappen",
+        "Pierre Gasly",
+        "Sergio Perez",
+        "Yuki Tsunoda"
+      ],
+      "drivers_by_year": {
+        "2018": [
+          "Daniel Ricciardo",
+          "Max Verstappen"
+        ],
+        "2019": [
+          "Alexander Albon",
+          "Max Verstappen",
+          "Pierre Gasly"
+        ],
+        "2020": [
+          "Alexander Albon",
+          "Max Verstappen"
+        ],
+        "2021": [
+          "Max Verstappen",
+          "Sergio Perez"
+        ],
+        "2023": [
+          "Max Verstappen",
+          "Sergio Perez"
+        ],
+        "2024": [
+          "Max Verstappen",
+          "Sergio Perez"
+        ],
+        "2025": [
+          "Max Verstappen",
+          "Yuki Tsunoda"
+        ]
+      },
+      "origin": "Austria",
+      "points_by_year": {
+        "2018": 419.0,
+        "2019": 417.0,
+        "2020": 319.0,
+        "2021": 585.5,
+        "2023": 860.0,
+        "2024": 589.0,
+        "2025": 272.0
+      },
+      "wins_by_year": {
+        "2018": 4,
+        "2019": 3,
+        "2020": 2,
+        "2021": 11,
+        "2023": 21,
+        "2024": 9,
+        "2025": 4
+      },
+      "podiums_by_year": {
+        "2018": 13,
+        "2019": 9,
+        "2020": 13,
+        "2021": 23,
+        "2023": 30,
+        "2024": 18,
+        "2025": 8
+      },
+      "best_result": {
+        "year": 2023,
+        "round": 2,
+        "event": "Saudi Arabian Grand Prix",
+        "points": 44.0,
+        "drivers": [
+          {
+            "name": "Sergio Perez",
+            "points": 25.0,
+            "position": 1.0
+          },
+          {
+            "name": "Max Verstappen",
+            "points": 19.0,
+            "position": 2.0
+          }
+        ]
+      }
+    },
+    "McLaren": {
+      "name": "McLaren",
+      "team_color": "#FF8700",
+      "total_points": 2434.0,
+      "wins": 19,
+      "podiums": 66,
+      "poles": 18,
+      "season_count": 8,
+      "seasons": [
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ],
+      "total_drivers": 6,
+      "drivers": [
+        "Carlos Sainz",
+        "Daniel Ricciardo",
+        "Fernando Alonso",
+        "Lando Norris",
+        "Oscar Piastri",
+        "Stoffel Vandoorne"
+      ],
+      "drivers_by_year": {
+        "2018": [
+          "Fernando Alonso",
+          "Stoffel Vandoorne"
+        ],
+        "2019": [
+          "Carlos Sainz",
+          "Lando Norris"
+        ],
+        "2020": [
+          "Carlos Sainz",
+          "Lando Norris"
+        ],
+        "2021": [
+          "Daniel Ricciardo",
+          "Lando Norris"
+        ],
+        "2022": [
+          "Daniel Ricciardo",
+          "Lando Norris"
+        ],
+        "2023": [
+          "Lando Norris",
+          "Oscar Piastri"
+        ],
+        "2024": [
+          "Lando Norris",
+          "Oscar Piastri"
+        ],
+        "2025": [
+          "Lando Norris",
+          "Oscar Piastri"
+        ]
+      },
+      "origin": "United Kingdom",
+      "points_by_year": {
+        "2018": 62.0,
+        "2019": 145.0,
+        "2020": 202.0,
+        "2021": 275.0,
+        "2022": 159.0,
+        "2023": 302.0,
+        "2024": 666.0,
+        "2025": 623.0
+      },
+      "wins_by_year": {
+        "2021": 1,
+        "2024": 6,
+        "2025": 12
+      },
+      "podiums_by_year": {
+        "2019": 1,
+        "2020": 2,
+        "2021": 5,
+        "2022": 1,
+        "2023": 9,
+        "2024": 21,
+        "2025": 27
+      },
+      "best_result": {
+        "year": 2021,
+        "round": 14,
+        "event": "Italian Grand Prix",
+        "points": 44.0,
+        "drivers": [
+          {
+            "name": "Daniel Ricciardo",
+            "points": 26.0,
+            "position": 1.0
+          },
+          {
+            "name": "Lando Norris",
+            "points": 18.0,
+            "position": 2.0
+          }
+        ]
+      }
+    },
+    "Renault": {
+      "name": "Renault",
+      "team_color": "#FFF500",
+      "total_points": 394.0,
+      "wins": 0,
+      "podiums": 3,
+      "poles": 0,
+      "season_count": 3,
+      "seasons": [
+        2018,
+        2019,
+        2020
+      ],
+      "total_drivers": 4,
+      "drivers": [
+        "Carlos Sainz",
+        "Daniel Ricciardo",
+        "Esteban Ocon",
+        "Nico Hulkenberg"
+      ],
+      "drivers_by_year": {
+        "2018": [
+          "Carlos Sainz",
+          "Nico Hulkenberg"
+        ],
+        "2019": [
+          "Daniel Ricciardo",
+          "Nico Hulkenberg"
+        ],
+        "2020": [
+          "Daniel Ricciardo",
+          "Esteban Ocon"
+        ]
+      },
+      "origin": "France",
+      "points_by_year": {
+        "2018": 122.0,
+        "2019": 91.0,
+        "2020": 181.0
+      },
+      "wins_by_year": {},
+      "podiums_by_year": {
+        "2020": 3
+      },
+      "best_result": {
+        "year": 2020,
+        "round": 16,
+        "event": "Sakhir Grand Prix",
+        "points": 28.0,
+        "drivers": [
+          {
+            "name": "Esteban Ocon",
+            "points": 18.0,
+            "position": 2.0
+          },
+          {
+            "name": "Daniel Ricciardo",
+            "points": 10.0,
+            "position": 5.0
+          }
+        ]
+      }
+    },
+    "Force India": {
+      "name": "Force India",
+      "team_color": "#F596C8",
+      "total_points": 59.0,
+      "wins": 0,
+      "podiums": 1,
+      "poles": 0,
+      "season_count": 1,
+      "seasons": [
+        2018
+      ],
+      "total_drivers": 2,
+      "drivers": [
+        "Esteban Ocon",
+        "Sergio Perez"
+      ],
+      "drivers_by_year": {
+        "2018": [
+          "Esteban Ocon",
+          "Sergio Perez"
+        ]
+      },
+      "origin": "India",
+      "points_by_year": {
+        "2018": 59.0
+      },
+      "wins_by_year": {},
+      "podiums_by_year": {
+        "2018": 1
+      },
+      "best_result": {
+        "year": 2018,
+        "round": 4,
+        "event": "Azerbaijan Grand Prix",
+        "points": 15.0,
+        "drivers": [
+          {
+            "name": "Sergio Perez",
+            "points": 15.0,
+            "position": 3.0
+          }
+        ]
+      }
+    },
+    "Sauber": {
+      "name": "Sauber",
+      "team_color": "#9B0000",
+      "total_points": 48.0,
+      "wins": 0,
+      "podiums": 0,
+      "poles": 0,
+      "season_count": 1,
+      "seasons": [
+        2018
+      ],
+      "total_drivers": 2,
+      "drivers": [
+        "Charles Leclerc",
+        "Marcus Ericsson"
+      ],
+      "drivers_by_year": {
+        "2018": [
+          "Charles Leclerc",
+          "Marcus Ericsson"
+        ]
+      },
+      "origin": "Switzerland",
+      "points_by_year": {
+        "2018": 48.0
+      },
+      "wins_by_year": {},
+      "podiums_by_year": {},
+      "best_result": {
+        "year": 2018,
+        "round": 4,
+        "event": "Azerbaijan Grand Prix",
+        "points": 8.0,
+        "drivers": [
+          {
+            "name": "Charles Leclerc",
+            "points": 8.0,
+            "position": 6.0
+          }
+        ]
+      }
+    },
+    "Williams": {
+      "name": "Williams",
+      "team_color": "#FFFFFF",
+      "total_points": 185.0,
+      "wins": 0,
+      "podiums": 2,
+      "poles": 0,
+      "season_count": 8,
+      "seasons": [
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ],
+      "total_drivers": 11,
+      "drivers": [
+        "Alexander Albon",
+        "Carlos Sainz",
+        "Franco Colapinto",
+        "George Russell",
+        "Jack Aitken",
+        "Lance Stroll",
+        "Logan Sargeant",
+        "Nicholas Latifi",
+        "Nyck de Vries",
+        "Robert Kubica",
+        "Sergey Sirotkin"
+      ],
+      "drivers_by_year": {
+        "2018": [
+          "Lance Stroll",
+          "Sergey Sirotkin"
+        ],
+        "2019": [
+          "George Russell",
+          "Robert Kubica"
+        ],
+        "2020": [
+          "George Russell",
+          "Nicholas Latifi"
+        ],
+        "2021": [
+          "George Russell",
+          "Nicholas Latifi"
+        ],
+        "2022": [
+          "Alexander Albon",
+          "Nicholas Latifi"
+        ],
+        "2023": [
+          "Alexander Albon",
+          "Logan Sargeant"
+        ],
+        "2024": [
+          "Alexander Albon",
+          "Franco Colapinto",
+          "Logan Sargeant"
+        ],
+        "2025": [
+          "Alexander Albon",
+          "Carlos Sainz"
+        ]
+      },
+      "origin": "United Kingdom",
+      "points_by_year": {
+        "2018": 7.0,
+        "2019": 1.0,
+        "2020": 0.0,
+        "2021": 23.0,
+        "2022": 8.0,
+        "2023": 28.0,
+        "2024": 17.0,
+        "2025": 101.0
+      },
+      "wins_by_year": {},
+      "podiums_by_year": {
+        "2021": 1,
+        "2025": 1
+      },
+      "best_result": {
+        "year": 2025,
+        "round": 17,
+        "event": "Azerbaijan Grand Prix",
+        "points": 15.0,
+        "drivers": [
+          {
+            "name": "Carlos Sainz",
+            "points": 15.0,
+            "position": 3.0
+          }
+        ]
+      }
+    },
+    "Toro Rosso": {
+      "name": "Toro Rosso",
+      "team_color": "#469BFF",
+      "total_points": 118.0,
+      "wins": 0,
+      "podiums": 2,
+      "poles": 0,
+      "season_count": 2,
+      "seasons": [
+        2018,
+        2019
+      ],
+      "total_drivers": 4,
+      "drivers": [
+        "Alexander Albon",
+        "Brendon Hartley",
+        "Daniil Kvyat",
+        "Pierre Gasly"
+      ],
+      "drivers_by_year": {
+        "2018": [
+          "Brendon Hartley",
+          "Pierre Gasly"
+        ],
+        "2019": [
+          "Alexander Albon",
+          "Daniil Kvyat",
+          "Pierre Gasly"
+        ]
+      },
+      "origin": "Italy",
+      "points_by_year": {
+        "2018": 33.0,
+        "2019": 85.0
+      },
+      "wins_by_year": {},
+      "podiums_by_year": {
+        "2019": 2
+      },
+      "best_result": {
+        "year": 2019,
+        "round": 11,
+        "event": "German Grand Prix",
+        "points": 23.0,
+        "drivers": [
+          {
+            "name": "Daniil Kvyat",
+            "points": 15.0,
+            "position": 3.0
+          },
+          {
+            "name": "Alexander Albon",
+            "points": 8.0,
+            "position": 6.0
+          }
+        ]
+      }
+    },
+    "Haas F1 Team": {
+      "name": "Haas F1 Team",
+      "team_color": "#828282",
+      "total_points": 275.0,
+      "wins": 0,
+      "podiums": 0,
+      "poles": 0,
+      "season_count": 8,
+      "seasons": [
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ],
+      "total_drivers": 8,
+      "drivers": [
+        "Esteban Ocon",
+        "Kevin Magnussen",
+        "Mick Schumacher",
+        "Nico Hulkenberg",
+        "Nikita Mazepin",
+        "Oliver Bearman",
+        "Pietro Fittipaldi",
+        "Romain Grosjean"
+      ],
+      "drivers_by_year": {
+        "2018": [
+          "Kevin Magnussen",
+          "Romain Grosjean"
+        ],
+        "2019": [
+          "Kevin Magnussen",
+          "Romain Grosjean"
+        ],
+        "2020": [
+          "Kevin Magnussen",
+          "Romain Grosjean"
+        ],
+        "2021": [
+          "Mick Schumacher",
+          "Nikita Mazepin"
+        ],
+        "2022": [
+          "Kevin Magnussen",
+          "Mick Schumacher"
+        ],
+        "2023": [
+          "Kevin Magnussen",
+          "Nico Hulkenberg"
+        ],
+        "2024": [
+          "Kevin Magnussen",
+          "Nico Hulkenberg"
+        ],
+        "2025": [
+          "Esteban Ocon",
+          "Oliver Bearman"
+        ]
+      },
+      "origin": "United States",
+      "points_by_year": {
+        "2018": 93.0,
+        "2019": 28.0,
+        "2020": 3.0,
+        "2021": 0.0,
+        "2022": 37.0,
+        "2023": 12.0,
+        "2024": 58.0,
+        "2025": 44.0
+      },
+      "wins_by_year": {},
+      "podiums_by_year": {},
+      "best_result": {
+        "year": 2018,
+        "round": 9,
+        "event": "Austrian Grand Prix",
+        "points": 22.0,
+        "drivers": [
+          {
+            "name": "Romain Grosjean",
+            "points": 12.0,
+            "position": 4.0
+          },
+          {
+            "name": "Kevin Magnussen",
+            "points": 10.0,
+            "position": 5.0
+          }
+        ]
+      }
+    },
+    "Racing Point": {
+      "name": "Racing Point",
+      "team_color": "#f596c8",
+      "total_points": 335.0,
+      "wins": 1,
+      "podiums": 4,
+      "poles": 1,
+      "season_count": 3,
+      "seasons": [
+        2018,
+        2019,
+        2020
+      ],
+      "total_drivers": 4,
+      "drivers": [
+        "Esteban Ocon",
+        "Lance Stroll",
+        "Nico Hulkenberg",
+        "Sergio Perez"
+      ],
+      "drivers_by_year": {
+        "2018": [
+          "Esteban Ocon",
+          "Sergio Perez"
+        ],
+        "2019": [
+          "Lance Stroll",
+          "Sergio Perez"
+        ],
+        "2020": [
+          "Lance Stroll",
+          "Nico Hulkenberg",
+          "Sergio Perez"
+        ]
+      },
+      "origin": "United Kingdom",
+      "points_by_year": {
+        "2018": 52.0,
+        "2019": 73.0,
+        "2020": 210.0
+      },
+      "wins_by_year": {
+        "2020": 1
+      },
+      "podiums_by_year": {
+        "2020": 4
+      },
+      "best_result": {
+        "year": 2020,
+        "round": 16,
+        "event": "Sakhir Grand Prix",
+        "points": 40.0,
+        "drivers": [
+          {
+            "name": "Sergio Perez",
+            "points": 25.0,
+            "position": 1.0
+          },
+          {
+            "name": "Lance Stroll",
+            "points": 15.0,
+            "position": 3.0
+          }
+        ]
+      }
+    },
+    "Alfa Romeo Racing": {
+      "name": "Alfa Romeo Racing",
+      "team_color": "#9b0000",
+      "total_points": 78.0,
+      "wins": 0,
+      "podiums": 0,
+      "poles": 0,
+      "season_count": 3,
+      "seasons": [
+        2019,
+        2020,
+        2021
+      ],
+      "total_drivers": 3,
+      "drivers": [
+        "Antonio Giovinazzi",
+        "Kimi R\u00e4ikk\u00f6nen",
+        "Robert Kubica"
+      ],
+      "drivers_by_year": {
+        "2019": [
+          "Antonio Giovinazzi",
+          "Kimi R\u00e4ikk\u00f6nen"
+        ],
+        "2020": [
+          "Antonio Giovinazzi",
+          "Kimi R\u00e4ikk\u00f6nen"
+        ],
+        "2021": [
+          "Antonio Giovinazzi",
+          "Kimi R\u00e4ikk\u00f6nen"
+        ]
+      },
+      "origin": null,
+      "points_by_year": {
+        "2019": 57.0,
+        "2020": 8.0,
+        "2021": 13.0
+      },
+      "wins_by_year": {},
+      "podiums_by_year": {},
+      "best_result": {
+        "year": 2019,
+        "round": 20,
+        "event": "Brazilian Grand Prix",
+        "points": 22.0,
+        "drivers": [
+          {
+            "name": "Kimi R\u00e4ikk\u00f6nen",
+            "points": 12.0,
+            "position": 4.0
+          },
+          {
+            "name": "Antonio Giovinazzi",
+            "points": 10.0,
+            "position": 5.0
+          }
+        ]
+      }
+    },
+    "AlphaTauri": {
+      "name": "AlphaTauri",
+      "team_color": "#ffffff",
+      "total_points": 309.0,
+      "wins": 1,
+      "podiums": 2,
+      "poles": 0,
+      "season_count": 4,
+      "seasons": [
+        2020,
+        2021,
+        2022,
+        2023
+      ],
+      "total_drivers": 6,
+      "drivers": [
+        "Daniel Ricciardo",
+        "Daniil Kvyat",
+        "Liam Lawson",
+        "Nyck De Vries",
+        "Pierre Gasly",
+        "Yuki Tsunoda"
+      ],
+      "drivers_by_year": {
+        "2020": [
+          "Daniil Kvyat",
+          "Pierre Gasly"
+        ],
+        "2021": [
+          "Pierre Gasly",
+          "Yuki Tsunoda"
+        ],
+        "2022": [
+          "Pierre Gasly",
+          "Yuki Tsunoda"
+        ],
+        "2023": [
+          "Daniel Ricciardo",
+          "Liam Lawson",
+          "Nyck De Vries",
+          "Yuki Tsunoda"
+        ]
+      },
+      "origin": "Italy",
+      "points_by_year": {
+        "2020": 107.0,
+        "2021": 142.0,
+        "2022": 35.0,
+        "2023": 25.0
+      },
+      "wins_by_year": {
+        "2020": 1
+      },
+      "podiums_by_year": {
+        "2020": 1,
+        "2021": 1
+      },
+      "best_result": {
+        "year": 2020,
+        "round": 8,
+        "event": "Italian Grand Prix",
+        "points": 27.0,
+        "drivers": [
+          {
+            "name": "Pierre Gasly",
+            "points": 25.0,
+            "position": 1.0
+          },
+          {
+            "name": "Daniil Kvyat",
+            "points": 2.0,
+            "position": 9.0
+          }
+        ]
+      }
+    },
+    "Aston Martin": {
+      "name": "Aston Martin",
+      "team_color": "#006F62",
+      "total_points": 568.0,
+      "wins": 0,
+      "podiums": 9,
+      "poles": 0,
+      "season_count": 5,
+      "seasons": [
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ],
+      "total_drivers": 4,
+      "drivers": [
+        "Fernando Alonso",
+        "Lance Stroll",
+        "Nico H\u00fclkenberg",
+        "Sebastian Vettel"
+      ],
+      "drivers_by_year": {
+        "2021": [
+          "Lance Stroll",
+          "Sebastian Vettel"
+        ],
+        "2022": [
+          "Lance Stroll",
+          "Sebastian Vettel"
+        ],
+        "2023": [
+          "Fernando Alonso",
+          "Lance Stroll"
+        ],
+        "2024": [
+          "Fernando Alonso",
+          "Lance Stroll"
+        ],
+        "2025": [
+          "Fernando Alonso",
+          "Lance Stroll"
+        ]
+      },
+      "origin": "United Kingdom",
+      "points_by_year": {
+        "2021": 77.0,
+        "2022": 55.0,
+        "2023": 280.0,
+        "2024": 94.0,
+        "2025": 62.0
+      },
+      "wins_by_year": {},
+      "podiums_by_year": {
+        "2021": 1,
+        "2023": 8
+      },
+      "best_result": {
+        "year": 2023,
+        "round": 3,
+        "event": "Australian Grand Prix",
+        "points": 27.0,
+        "drivers": [
+          {
+            "name": "Fernando Alonso",
+            "points": 15.0,
+            "position": 3.0
+          },
+          {
+            "name": "Lance Stroll",
+            "points": 12.0,
+            "position": 4.0
+          }
+        ]
+      }
+    },
+    "Alpine": {
+      "name": "Alpine",
+      "team_color": "#0090FF",
+      "total_points": 360.0,
+      "wins": 1,
+      "podiums": 6,
+      "poles": 0,
+      "season_count": 4,
+      "seasons": [
+        2021,
+        2023,
+        2024,
+        2025
+      ],
+      "total_drivers": 5,
+      "drivers": [
+        "Esteban Ocon",
+        "Fernando Alonso",
+        "Franco Colapinto",
+        "Jack Doohan",
+        "Pierre Gasly"
+      ],
+      "drivers_by_year": {
+        "2021": [
+          "Esteban Ocon",
+          "Fernando Alonso"
+        ],
+        "2023": [
+          "Esteban Ocon",
+          "Pierre Gasly"
+        ],
+        "2024": [
+          "Esteban Ocon",
+          "Pierre Gasly"
+        ],
+        "2025": [
+          "Franco Colapinto",
+          "Jack Doohan",
+          "Pierre Gasly"
+        ]
+      },
+      "origin": "France",
+      "points_by_year": {
+        "2021": 155.0,
+        "2023": 120.0,
+        "2024": 65.0,
+        "2025": 20.0
+      },
+      "wins_by_year": {
+        "2021": 1
+      },
+      "podiums_by_year": {
+        "2021": 2,
+        "2023": 2,
+        "2024": 2
+      },
+      "best_result": {
+        "year": 2021,
+        "round": 11,
+        "event": "Hungarian Grand Prix",
+        "points": 37.0,
+        "drivers": [
+          {
+            "name": "Esteban Ocon",
+            "points": 25.0,
+            "position": 1.0
+          },
+          {
+            "name": "Fernando Alonso",
+            "points": 12.0,
+            "position": 4.0
+          }
+        ]
+      }
+    },
+    "Alfa Romeo": {
+      "name": "Alfa Romeo",
+      "team_color": "#C92D4B",
+      "total_points": 71.0,
+      "wins": 0,
+      "podiums": 0,
+      "poles": 0,
+      "season_count": 2,
+      "seasons": [
+        2022,
+        2023
+      ],
+      "total_drivers": 2,
+      "drivers": [
+        "Guanyu Zhou",
+        "Valtteri Bottas"
+      ],
+      "drivers_by_year": {
+        "2022": [
+          "Guanyu Zhou",
+          "Valtteri Bottas"
+        ],
+        "2023": [
+          "Guanyu Zhou",
+          "Valtteri Bottas"
+        ]
+      },
+      "origin": "Switzerland",
+      "points_by_year": {
+        "2022": 55.0,
+        "2023": 16.0
+      },
+      "wins_by_year": {},
+      "podiums_by_year": {},
+      "best_result": {
+        "year": 2022,
+        "round": 4,
+        "event": "Emilia Romagna Grand Prix",
+        "points": 10.0,
+        "drivers": [
+          {
+            "name": "Valtteri Bottas",
+            "points": 10.0,
+            "position": 5.0
+          }
+        ]
+      }
+    },
+    "Alpine F1 Team": {
+      "name": "Alpine F1 Team",
+      "team_color": "#888888",
+      "total_points": 173.0,
+      "wins": 0,
+      "podiums": 0,
+      "poles": 0,
+      "season_count": 1,
+      "seasons": [
+        2022
+      ],
+      "total_drivers": 2,
+      "drivers": [
+        "Esteban Ocon",
+        "Fernando Alonso"
+      ],
+      "drivers_by_year": {
+        "2022": [
+          "Esteban Ocon",
+          "Fernando Alonso"
+        ]
+      },
+      "origin": null,
+      "points_by_year": {
+        "2022": 173.0
+      },
+      "wins_by_year": {},
+      "podiums_by_year": {},
+      "best_result": {
+        "year": 2022,
+        "round": 18,
+        "event": "Japanese Grand Prix",
+        "points": 18.0,
+        "drivers": [
+          {
+            "name": "Esteban Ocon",
+            "points": 12.0,
+            "position": 4.0
+          },
+          {
+            "name": "Fernando Alonso",
+            "points": 6.0,
+            "position": 7.0
+          }
+        ]
+      }
+    },
+    "Red Bull": {
+      "name": "Red Bull",
+      "team_color": "#888888",
+      "total_points": 759.0,
+      "wins": 17,
+      "podiums": 28,
+      "poles": 8,
+      "season_count": 1,
+      "seasons": [
+        2022
+      ],
+      "total_drivers": 2,
+      "drivers": [
+        "Max Verstappen",
+        "Sergio P\u00e9rez"
+      ],
+      "drivers_by_year": {
+        "2022": [
+          "Max Verstappen",
+          "Sergio P\u00e9rez"
+        ]
+      },
+      "origin": null,
+      "points_by_year": {
+        "2022": 759.0
+      },
+      "wins_by_year": {
+        "2022": 17
+      },
+      "podiums_by_year": {
+        "2022": 28
+      },
+      "best_result": {
+        "year": 2022,
+        "round": 4,
+        "event": "Emilia Romagna Grand Prix",
+        "points": 44.0,
+        "drivers": [
+          {
+            "name": "Max Verstappen",
+            "points": 26.0,
+            "position": 1.0
+          },
+          {
+            "name": "Sergio P\u00e9rez",
+            "points": 18.0,
+            "position": 2.0
+          }
+        ]
+      }
+    },
+    "Kick Sauber": {
+      "name": "Kick Sauber",
+      "team_color": "#52e252",
+      "total_points": 59.0,
+      "wins": 0,
+      "podiums": 1,
+      "poles": 0,
+      "season_count": 2,
+      "seasons": [
+        2024,
+        2025
+      ],
+      "total_drivers": 4,
+      "drivers": [
+        "Gabriel Bortoleto",
+        "Guanyu Zhou",
+        "Nico Hulkenberg",
+        "Valtteri Bottas"
+      ],
+      "drivers_by_year": {
+        "2024": [
+          "Guanyu Zhou",
+          "Valtteri Bottas"
+        ],
+        "2025": [
+          "Gabriel Bortoleto",
+          "Nico Hulkenberg"
+        ]
+      },
+      "origin": null,
+      "points_by_year": {
+        "2024": 4.0,
+        "2025": 55.0
+      },
+      "wins_by_year": {},
+      "podiums_by_year": {
+        "2025": 1
+      },
+      "best_result": {
+        "year": 2025,
+        "round": 12,
+        "event": "British Grand Prix",
+        "points": 15.0,
+        "drivers": [
+          {
+            "name": "Nico Hulkenberg",
+            "points": 15.0,
+            "position": 3.0
+          }
+        ]
+      }
+    },
+    "RB": {
+      "name": "RB",
+      "team_color": "#6692ff",
+      "total_points": 46.0,
+      "wins": 0,
+      "podiums": 0,
+      "poles": 0,
+      "season_count": 1,
+      "seasons": [
+        2024
+      ],
+      "total_drivers": 3,
+      "drivers": [
+        "Daniel Ricciardo",
+        "Liam Lawson",
+        "Yuki Tsunoda"
+      ],
+      "drivers_by_year": {
+        "2024": [
+          "Daniel Ricciardo",
+          "Liam Lawson",
+          "Yuki Tsunoda"
+        ]
+      },
+      "origin": null,
+      "points_by_year": {
+        "2024": 46.0
+      },
+      "wins_by_year": {},
+      "podiums_by_year": {},
+      "best_result": {
+        "year": 2024,
+        "round": 21,
+        "event": "S\u00e3o Paulo Grand Prix",
+        "points": 8.0,
+        "drivers": [
+          {
+            "name": "Yuki Tsunoda",
+            "points": 6.0,
+            "position": 7.0
+          },
+          {
+            "name": "Liam Lawson",
+            "points": 2.0,
+            "position": 9.0
+          }
+        ]
+      }
+    },
+    "Racing Bulls": {
+      "name": "Racing Bulls",
+      "team_color": "#6692FF",
+      "total_points": 72.0,
+      "wins": 0,
+      "podiums": 1,
+      "poles": 0,
+      "season_count": 1,
+      "seasons": [
+        2025
+      ],
+      "total_drivers": 3,
+      "drivers": [
+        "Isack Hadjar",
+        "Liam Lawson",
+        "Yuki Tsunoda"
+      ],
+      "drivers_by_year": {
+        "2025": [
+          "Isack Hadjar",
+          "Liam Lawson"
+        ]
+      },
+      "origin": null,
+      "points_by_year": {
+        "2025": 72.0
+      },
+      "wins_by_year": {},
+      "podiums_by_year": {
+        "2025": 1
+      },
+      "best_result": {
+        "year": 2025,
+        "round": 15,
+        "event": "Dutch Grand Prix",
+        "points": 15.0,
+        "drivers": [
+          {
+            "name": "Isack Hadjar",
+            "points": 15.0,
+            "position": 3.0
+          }
+        ]
+      }
+    }
+  },
+  "years": [
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "version": "v1"
+}

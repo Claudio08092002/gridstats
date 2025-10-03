@@ -1,15 +1,14 @@
-<section class="wrap">
   <div class="card">
     <div class="controls">
       <div class="field span-3">
-        <label for="season">Saison</label>
+        <label for="season">Season</label>
   <select id="season" [(ngModel)]="season" (change)="onSeasonChange()" class="select select--dark border">
           <option *ngFor="let y of seasons" [ngValue]="y">{{ y }}</option>
         </select>
       </div>
 
       <div class="field span-4" *ngIf="driverKeys.length">
-        <label for="driver1">Fahrer 1</label>
+        <label for="driver1">Driver 1</label>
   <select id="driver1" [(ngModel)]="driver1" class="select select--dark border">
           <option *ngFor="let code of driverKeys" [ngValue]="code">
             {{ driverMap[code].full_name }} ({{ code }})
@@ -18,7 +17,7 @@
       </div>
 
       <div class="field span-4" *ngIf="driverKeys.length">
-        <label for="driver2">Fahrer 2</label>
+        <label for="driver2">Driver 2</label>
   <select id="driver2" [(ngModel)]="driver2" class="select select--dark border">
           <option *ngFor="let code of driverKeys" [ngValue]="code">
             {{ driverMap[code].full_name }} ({{ code }})
@@ -27,7 +26,7 @@
       </div>
 
       <div class="field span-3 actions" *ngIf="driverKeys.length">
-        <button (click)="onCompare()">Vergleichen</button>
+        <button (click)="onCompare()">Compare</button>
       </div>
     </div>
 
@@ -39,15 +38,15 @@
     <!-- Einzel-Charts nebeneinander -->
     <div class="charts-grid" *ngIf="compared">
       <div class="chart-card">
-        <h3>Punkte</h3>
+        <h3>Points</h3>
         <div class="chart-wrap"><canvas #pointsChart></canvas></div>
       </div>
       <div class="chart-card">
-        <h3>Siege</h3>
+        <h3>Wins</h3>
         <div class="chart-wrap"><canvas #winsChart></canvas></div>
       </div>
       <div class="chart-card">
-        <h3>Podien</h3>
+        <h3>Podiums</h3>
         <div class="chart-wrap"><canvas #podiumsChart></canvas></div>
       </div>
       <div class="chart-card">
@@ -55,7 +54,7 @@
         <div class="chart-wrap"><canvas #polesChart></canvas></div>
       </div>
       <div class="chart-card">
-        <h3>Ø Ziel</h3>
+        <h3>Avg Finish</h3>
         <div class="chart-wrap"><canvas #avgChart></canvas></div>
       </div>
       <div class="chart-card">
@@ -64,9 +63,9 @@
       </div>
     </div>
 
-    <div *ngIf="loading" class="status">Lädt Season …</div>
-    <div *ngIf="errorMsg" class="status error">Fehler: {{ errorMsg }}</div>
+    <div *ngIf="loading" class="status">Loading Season...</div>
+    <div *ngIf="errorMsg" class="status error">Error: {{ errorMsg }}</div>
   </div>
 
   <footer class="footer">© {{ currentYear }} GridStats</footer>
-</section>
+

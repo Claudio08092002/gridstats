@@ -238,7 +238,7 @@ export class DriverComparison implements OnDestroy {
   onCompare(): void {
     if (!this.driver1 || !this.driver2) return;
     if (this.driver1 === this.driver2) {
-      alert('Bitte zwei verschiedene Fahrer waehlen.');
+      alert('Please choose two different drivers.');
       return;
     }
     const d1 = this.driverMap[this.driver1];
@@ -247,7 +247,7 @@ export class DriverComparison implements OnDestroy {
 
   this.deriveDriverColors(d1, d2);
 
-    const labels = ['Punkte', 'Siege', 'Poles', 'Podien', 'Ø Ziel'];
+    const labels = ['Points', 'Wins', 'Poles', 'Podiums', 'Avg Finish'];
     const d1Data = [d1.total_points, d1.wins, d1.poles, d1.podiums, d1.avg_finish ?? 0] as number[];
     const d2Data = [d2.total_points, d2.wins, d2.poles, d2.podiums, d2.avg_finish ?? 0] as number[];
 
@@ -301,11 +301,11 @@ export class DriverComparison implements OnDestroy {
       const ctxDnfs   = this.getCtx(this.dnfsChart);
 
 
-      if (ctxPoints)  this.makeBar(ctxPoints,  'Punkte', d1.total_points,    d2.total_points, d1.code, d2.code);
-      if (ctxWins)    this.makeBar(ctxWins,    'Siege',  d1.wins,            d2.wins,        d1.code, d2.code);
-      if (ctxPodiums) this.makeBar(ctxPodiums, 'Podien', d1.podiums,         d2.podiums,     d1.code, d2.code);
+      if (ctxPoints)  this.makeBar(ctxPoints,  'Points', d1.total_points,    d2.total_points, d1.code, d2.code);
+      if (ctxWins)    this.makeBar(ctxWins,    'Wins',  d1.wins,            d2.wins,        d1.code, d2.code);
+      if (ctxPodiums) this.makeBar(ctxPodiums, 'Podiums', d1.podiums,         d2.podiums,     d1.code, d2.code);
       if (ctxPoles)   this.makeBar(ctxPoles,   'Poles',  d1.poles,           d2.poles,       d1.code, d2.code);
-      if (ctxAvg)     this.makeBar(ctxAvg,     'Ø Ziel', d1.avg_finish ?? 0, d2.avg_finish ?? 0, d1.code, d2.code);
+      if (ctxAvg)     this.makeBar(ctxAvg,     'Ø Finish', d1.avg_finish ?? 0, d2.avg_finish ?? 0, d1.code, d2.code);
       if (ctxDnfs)    this.makeBar(ctxDnfs,    'Dnfs',   d1.dnfs,            d2.dnfs,        d1.code, d2.code);
 
     });

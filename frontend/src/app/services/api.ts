@@ -22,6 +22,43 @@ export interface SeasonResponse {
   drivers: Record<string, DriverSummary>;
 }
 
+export interface ConstructorSummary {
+  name: string;
+  team_color: string;
+  total_points: number;
+  wins: number;
+  podiums: number;
+  poles: number;
+  season_count: number;
+  seasons: number[];
+  total_drivers: number;
+  drivers: string[];
+  drivers_by_year: Record<string, string[]>;
+  origin: string | null;
+  points_by_year: Record<string, number>;
+  wins_by_year: Record<string, number>;
+  podiums_by_year: Record<string, number>;
+  best_result: {
+    year: number;
+    round: number;
+    event: string;
+    points: number;
+    drivers: Array<{name: string; points: number; position: any}>;
+  } | null;
+}
+
+export interface ConstructorListResponse {
+  constructors: Record<string, ConstructorSummary>;
+  years: number[];
+  version?: string;
+}
+
+export interface ConstructorComparisonResponse {
+  constructor1: ConstructorSummary;
+  constructor2: ConstructorSummary;
+  years: number[];
+}
+
 export interface TrackRoundRef {
   year: number;
   round: number;
@@ -146,6 +183,23 @@ export class ApiService {
       params = params.set('include_layouts', 'false');
     }
     return this.http.get<TrackMapResponse>(this.buildUrl(`/f1/trackmap/${year}/${round}`), {
+      params,
+    });
+  }
+
+  getConstructors(refresh: boolean = false) {
+    const suffix = refresh ? '?refresh=true' : '';
+    return this.http.get<ConstructorListResponse>(this.buildUrl(`/f1/constructors${suffix}`));
+  }
+
+  compareConstructors(constructor1: string, constructor2: string, refresh: boolean = false) {
+    let params = new HttpParams()
+      .set('constructor1', constructor1)
+      .set('constructor2', constructor2);
+    if (refresh) {
+      params = params.set('refresh', 'true');
+    }
+    return this.http.get<ConstructorComparisonResponse>(this.buildUrl('/f1/constructors/compare'), {
       params,
     });
   }
