@@ -489,11 +489,18 @@ export class TrackComponent implements OnInit, OnDestroy {
     if (!raw) {
       return '';
     }
+    // Match backend's _normalize_token logic exactly:
+    // 1. Normalize to NFKD
+    // 2. Remove accents (convert to ASCII-safe)
+    // 3. Replace non-alphanumeric with underscores
+    // 4. Strip leading/trailing underscores
+    // 5. Convert to lowercase
     const normalized = raw
       .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove diacritics/accents
       .replace(/[^a-zA-Z0-9]+/g, '_')
-      .toLowerCase()
-      .replace(/^_+|_+$/g, '');
+      .replace(/^_+|_+$/g, '')
+      .toLowerCase();
     return normalized || '';
   }
 

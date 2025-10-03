@@ -24,6 +24,11 @@
                 "glob": "**/*",
                 "input": "node_modules/flag-icons/flags",
                 "output": "assets/flags"
+              },
+              {
+                "glob": "**/*",
+                "input": "../backend/app/tracks_cache",
+                "output": "assets/tracks_cache"
               }
             ],
             "styles": [
@@ -94,6 +99,11 @@
                 "glob": "**/*",
                 "input": "node_modules/flag-icons/flags",
                 "output": "assets/flags"
+              },
+              {
+                "glob": "**/*",
+                "input": "../backend/app/tracks_cache",
+                "output": "assets/tracks_cache"
               }
             ],
             "styles": [
