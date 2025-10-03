@@ -50,6 +50,10 @@ export class TrackComponent implements OnInit, OnDestroy {
   loading = false;
   error: string | null = null;
 
+  // Cache version - increment to invalidate all old cached data
+  private readonly CACHE_VERSION = 3; // Bumped to 3 to clear after asset cache removal
+  private readonly CACHE_VERSION_KEY = 'tracks_cache_version';
+
   /**
    * Generates a cache key for storing track map data in localStorage.  The
    * key includes the season year and round number to ensure unique
@@ -65,7 +69,39 @@ export class TrackComponent implements OnInit, OnDestroy {
     // (e.g. two events both being round 1 in 2024).  Using both the
     // track key and the year/round ensures uniqueness.
     const trackKey = this.selectedKey ?? '';
-    return `tracks_cache_${trackKey}_${year}_${round}`;
+    return `tracks_cache_v${this.CACHE_VERSION}_${trackKey}_${year}_${round}`;
+  }
+
+  /**
+   * Check cache version and clear old cache if version has changed.
+   * This ensures users get fresh data when the cache structure changes.
+   */
+  private checkAndClearOldCache(): void {
+    if (!this.isBrowser) {
+      return;
+    }
+    try {
+      const storedVersion = window?.localStorage?.getItem(this.CACHE_VERSION_KEY);
+      const currentVersion = this.CACHE_VERSION.toString();
+      
+      if (storedVersion !== currentVersion) {
+        // Clear all old cache entries
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < (window?.localStorage?.length ?? 0); i++) {
+          const key = window?.localStorage?.key(i);
+          if (key && key.startsWith('tracks_cache_')) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => window?.localStorage?.removeItem(key));
+        
+        // Update version
+        window?.localStorage?.setItem(this.CACHE_VERSION_KEY, currentVersion);
+        console.log(`[Track Cache] Cleared old cache (v${storedVersion} → v${currentVersion})`);
+      }
+    } catch {
+      // Ignore errors
+    }
   }
 
   /**
@@ -112,6 +148,9 @@ export class TrackComponent implements OnInit, OnDestroy {
     if (!this.isBrowser) {
       return;
     }
+    // Check and clear old cache on init
+    this.checkAndClearOldCache();
+    
     this.api.getTracks().subscribe({
       next: (items) => {
         this.tracks = (items ?? []).sort((a, b) => a.display_name.localeCompare(b.display_name));
@@ -153,6 +192,21 @@ export class TrackComponent implements OnInit, OnDestroy {
       }
       return b.year - a.year;
     });
+  }
+
+  /**
+   * Convert hex color to rgba with opacity for winner backgrounds
+   */
+  getWinnerBackgroundColor(teamColor: string | undefined): string {
+    if (!teamColor) {
+      return 'rgba(255, 255, 255, 0.03)';
+    }
+    // Convert hex to rgba with 15% opacity
+    const hex = teamColor.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, 0.15)`;
   }
 
   flagClass(track?: TrackInfo | null): string[] | null {

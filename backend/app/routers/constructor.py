@@ -19,9 +19,52 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/f1/constructors")
 
-CACHE_VERSION = "v1"
+CACHE_VERSION = "v5"  # Bumped to v5 for dynamic championship calculation
 CONSTRUCTOR_CACHE_DIR = Path(__file__).resolve().parent.parent / "constructor_cache"
 CONSTRUCTOR_CACHE_DIR.mkdir(exist_ok=True)
+
+
+def _normalize_team_name(team_name: str) -> str:
+    """
+    Normalize team names to merge teams that are the same but had name changes.
+    This ensures historical continuity for teams that briefly changed names.
+    """
+    # Red Bull and Red Bull Racing are the same team
+    if team_name == 'Red Bull':
+        return 'Red Bull Racing'
+    
+    return team_name
+
+
+def _calculate_standings_by_year(constructors: dict) -> dict:
+    """Calculate championship standings position for each constructor by year"""
+    standings_by_year = {}
+    
+    # Collect all years
+    all_years = set()
+    for data in constructors.values():
+        all_years.update(data['points_by_year'].keys())
+    
+    # For each year, calculate standings
+    for year in all_years:
+        # Get all constructors and their points for this year
+        year_standings = []
+        for team_name, data in constructors.items():
+            points = data['points_by_year'].get(year, 0)
+            year_standings.append((team_name, points))
+        
+        # Sort by points descending (highest points = position 1)
+        year_standings.sort(key=lambda x: x[1], reverse=True)
+        
+        # Assign positions
+        for position, (team_name, points) in enumerate(year_standings, 1):
+            if team_name not in standings_by_year:
+                standings_by_year[team_name] = {}
+            # Only add positions for teams that actually competed (had points or participated)
+            if points > 0 or team_name in constructors and year in constructors[team_name]['seasons']:
+                standings_by_year[team_name][year] = position
+    
+    return standings_by_year
 
 
 def _get_cache_path() -> Path:
@@ -117,6 +160,9 @@ def _build_constructor_data() -> Dict[str, Any]:
                 team_name = str(row.get('TeamName') or row.get('ConstructorName') or '')
                 if not team_name or team_name == 'nan' or team_name.lower() == 'nan':
                     continue
+                
+                # Normalize team name (e.g., merge "Red Bull" with "Red Bull Racing")
+                team_name = _normalize_team_name(team_name)
                 
                 # Initialize constructor entry if needed
                 if team_name not in constructors:
@@ -261,6 +307,9 @@ def _build_constructor_data() -> Dict[str, Any]:
     
     logger.info(f"Finished processing. Found {len(constructors)} constructors.")
     
+    # Calculate championship standings for each year
+    standings_by_year = _calculate_standings_by_year(constructors)
+    
     # Convert sets to lists/counts and format data
     formatted_constructors = {}
     for team_name, data in constructors.items():
@@ -299,16 +348,13 @@ def _build_constructor_data() -> Dict[str, Any]:
         team_origins = {
             'Ferrari': 'Italy',
             'Red Bull Racing': 'Austria',
-            'Red Bull': 'Austria',
             'Mercedes': 'Germany',
             'McLaren': 'United Kingdom',
             'Alpine': 'France',
-            'Alpine F1 Team': 'France',
             'Aston Martin': 'United Kingdom',
             'Williams': 'United Kingdom',
             'AlphaTauri': 'Italy',
             'Alfa Romeo': 'Switzerland',
-            'Alfa Romeo Racing': 'Switzerland',
             'Haas F1 Team': 'United States',
             'Racing Point': 'United Kingdom',
             'Renault': 'France',
@@ -317,11 +363,13 @@ def _build_constructor_data() -> Dict[str, Any]:
             'Sauber': 'Switzerland',
             'Kick Sauber': 'Switzerland',
             'RB': 'Italy',
-            'Racing Bulls': 'Italy',
         }
         
         # Check if team name matches known origins
         origin = team_origins.get(team_name, None)
+        
+        # Get standings positions for each year this constructor competed
+        constructor_standings = standings_by_year.get(team_name, {})
         
         formatted_constructors[team_name] = {
             'name': data['name'],
@@ -340,6 +388,7 @@ def _build_constructor_data() -> Dict[str, Any]:
             'wins_by_year': {str(k): v for k, v in sorted(data['wins_by_year'].items())},
             'podiums_by_year': {str(k): v for k, v in sorted(data['podiums_by_year'].items())},
             'best_result': best_result,
+            'standings_by_year': {str(k): v for k, v in sorted(constructor_standings.items())},
         }
     
     return {

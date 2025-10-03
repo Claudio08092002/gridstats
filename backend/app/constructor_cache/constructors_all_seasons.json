@@ -106,6 +106,16 @@
             "position": 2.0
           }
         ]
+      },
+      "standings_by_year": {
+        "2018": 2,
+        "2019": 2,
+        "2020": 6,
+        "2021": 3,
+        "2022": 2,
+        "2023": 3,
+        "2024": 2,
+        "2025": 3
       }
     },
     "Mercedes": {
@@ -114,7 +124,7 @@
       "total_points": 4262.5,
       "wins": 54,
       "podiums": 152,
-      "poles": 55,
+      "poles": 54,
       "season_count": 8,
       "seasons": [
         2018,
@@ -215,26 +225,37 @@
             "position": 2.0
           }
         ]
+      },
+      "standings_by_year": {
+        "2018": 1,
+        "2019": 1,
+        "2020": 1,
+        "2021": 1,
+        "2022": 3,
+        "2023": 2,
+        "2024": 4,
+        "2025": 2
       }
     },
     "Red Bull Racing": {
       "name": "Red Bull Racing",
       "team_color": "#1E41FF",
-      "total_points": 3461.5,
-      "wins": 54,
-      "podiums": 114,
-      "poles": 43,
-      "season_count": 7,
+      "total_points": 4185.5,
+      "wins": 71,
+      "podiums": 142,
+      "poles": 51,
+      "season_count": 8,
       "seasons": [
         2018,
         2019,
         2020,
         2021,
+        2022,
         2023,
         2024,
         2025
       ],
-      "total_drivers": 7,
+      "total_drivers": 8,
       "drivers": [
         "Alexander Albon",
         "Daniel Ricciardo",
@@ -242,6 +263,7 @@
         "Max Verstappen",
         "Pierre Gasly",
         "Sergio Perez",
+        "Sergio P\u00e9rez",
         "Yuki Tsunoda"
       ],
       "drivers_by_year": {
@@ -262,6 +284,10 @@
           "Max Verstappen",
           "Sergio Perez"
         ],
+        "2022": [
+          "Max Verstappen",
+          "Sergio P\u00e9rez"
+        ],
         "2023": [
           "Max Verstappen",
           "Sergio Perez"
@@ -281,6 +307,7 @@
         "2019": 417.0,
         "2020": 319.0,
         "2021": 585.5,
+        "2022": 724.0,
         "2023": 860.0,
         "2024": 589.0,
         "2025": 272.0
@@ -290,6 +317,7 @@
         "2019": 3,
         "2020": 2,
         "2021": 11,
+        "2022": 17,
         "2023": 21,
         "2024": 9,
         "2025": 4
@@ -299,33 +327,44 @@
         "2019": 9,
         "2020": 13,
         "2021": 23,
+        "2022": 28,
         "2023": 30,
         "2024": 18,
         "2025": 8
       },
       "best_result": {
-        "year": 2023,
-        "round": 2,
-        "event": "Saudi Arabian Grand Prix",
+        "year": 2022,
+        "round": 4,
+        "event": "Emilia Romagna Grand Prix",
         "points": 44.0,
         "drivers": [
           {
-            "name": "Sergio Perez",
-            "points": 25.0,
+            "name": "Max Verstappen",
+            "points": 26.0,
             "position": 1.0
           },
           {
-            "name": "Max Verstappen",
-            "points": 19.0,
+            "name": "Sergio P\u00e9rez",
+            "points": 18.0,
             "position": 2.0
           }
         ]
+      },
+      "standings_by_year": {
+        "2018": 3,
+        "2019": 3,
+        "2020": 2,
+        "2021": 2,
+        "2022": 1,
+        "2023": 1,
+        "2024": 3,
+        "2025": 4
       }
     },
     "McLaren": {
       "name": "McLaren",
       "team_color": "#FF8700",
-      "total_points": 2434.0,
+      "total_points": 2433.0,
       "wins": 19,
       "podiums": 66,
       "poles": 18,
@@ -391,7 +430,7 @@
         "2021": 275.0,
         "2022": 159.0,
         "2023": 302.0,
-        "2024": 666.0,
+        "2024": 665.0,
         "2025": 623.0
       },
       "wins_by_year": {
@@ -425,6 +464,16 @@
             "position": 2.0
           }
         ]
+      },
+      "standings_by_year": {
+        "2018": 6,
+        "2019": 4,
+        "2020": 4,
+        "2021": 4,
+        "2022": 5,
+        "2023": 4,
+        "2024": 1,
+        "2025": 1
       }
     },
     "Renault": {
@@ -488,6 +537,11 @@
             "position": 5.0
           }
         ]
+      },
+      "standings_by_year": {
+        "2018": 4,
+        "2019": 5,
+        "2020": 5
       }
     },
     "Force India": {
@@ -532,6 +586,9 @@
             "position": 3.0
           }
         ]
+      },
+      "standings_by_year": {
+        "2018": 7
       }
     },
     "Sauber": {
@@ -574,6 +631,9 @@
             "position": 6.0
           }
         ]
+      },
+      "standings_by_year": {
+        "2018": 9
       }
     },
     "Williams": {
@@ -671,6 +731,16 @@
             "position": 3.0
           }
         ]
+      },
+      "standings_by_year": {
+        "2018": 11,
+        "2019": 10,
+        "2020": 12,
+        "2021": 8,
+        "2022": 10,
+        "2023": 7,
+        "2024": 9,
+        "2025": 5
       }
     },
     "Toro Rosso": {
@@ -729,6 +799,10 @@
             "position": 6.0
           }
         ]
+      },
+      "standings_by_year": {
+        "2018": 10,
+        "2019": 6
       }
     },
     "Haas F1 Team": {
@@ -824,6 +898,16 @@
             "position": 5.0
           }
         ]
+      },
+      "standings_by_year": {
+        "2018": 5,
+        "2019": 9,
+        "2020": 9,
+        "2021": 14,
+        "2022": 8,
+        "2023": 10,
+        "2024": 7,
+        "2025": 9
       }
     },
     "Racing Point": {
@@ -890,6 +974,11 @@
             "position": 3.0
           }
         ]
+      },
+      "standings_by_year": {
+        "2018": 8,
+        "2019": 7,
+        "2020": 3
       }
     },
     "Alfa Romeo Racing": {
@@ -950,6 +1039,11 @@
             "position": 5.0
           }
         ]
+      },
+      "standings_by_year": {
+        "2019": 8,
+        "2020": 8,
+        "2021": 9
       }
     },
     "AlphaTauri": {
@@ -1026,6 +1120,12 @@
             "position": 9.0
           }
         ]
+      },
+      "standings_by_year": {
+        "2020": 7,
+        "2021": 6,
+        "2022": 9,
+        "2023": 8
       }
     },
     "Aston Martin": {
@@ -1102,6 +1202,13 @@
             "position": 4.0
           }
         ]
+      },
+      "standings_by_year": {
+        "2021": 7,
+        "2022": 6,
+        "2023": 5,
+        "2024": 5,
+        "2025": 7
       }
     },
     "Alpine": {
@@ -1177,6 +1284,12 @@
             "position": 4.0
           }
         ]
+      },
+      "standings_by_year": {
+        "2021": 5,
+        "2023": 6,
+        "2024": 6,
+        "2025": 10
       }
     },
     "Alfa Romeo": {
@@ -1225,6 +1338,10 @@
             "position": 5.0
           }
         ]
+      },
+      "standings_by_year": {
+        "2022": 7,
+        "2023": 9
       }
     },
     "Alpine F1 Team": {
@@ -1272,57 +1389,9 @@
             "position": 7.0
           }
         ]
-      }
-    },
-    "Red Bull": {
-      "name": "Red Bull",
-      "team_color": "#888888",
-      "total_points": 759.0,
-      "wins": 17,
-      "podiums": 28,
-      "poles": 8,
-      "season_count": 1,
-      "seasons": [
-        2022
-      ],
-      "total_drivers": 2,
-      "drivers": [
-        "Max Verstappen",
-        "Sergio P\u00e9rez"
-      ],
-      "drivers_by_year": {
-        "2022": [
-          "Max Verstappen",
-          "Sergio P\u00e9rez"
-        ]
       },
-      "origin": null,
-      "points_by_year": {
-        "2022": 759.0
-      },
-      "wins_by_year": {
-        "2022": 17
-      },
-      "podiums_by_year": {
-        "2022": 28
-      },
-      "best_result": {
-        "year": 2022,
-        "round": 4,
-        "event": "Emilia Romagna Grand Prix",
-        "points": 44.0,
-        "drivers": [
-          {
-            "name": "Max Verstappen",
-            "points": 26.0,
-            "position": 1.0
-          },
-          {
-            "name": "Sergio P\u00e9rez",
-            "points": 18.0,
-            "position": 2.0
-          }
-        ]
+      "standings_by_year": {
+        "2022": 4
       }
     },
     "Kick Sauber": {
@@ -1354,7 +1423,7 @@
           "Nico Hulkenberg"
         ]
       },
-      "origin": null,
+      "origin": "Switzerland",
       "points_by_year": {
         "2024": 4.0,
         "2025": 55.0
@@ -1375,6 +1444,10 @@
             "position": 3.0
           }
         ]
+      },
+      "standings_by_year": {
+        "2024": 10,
+        "2025": 8
       }
     },
     "RB": {
@@ -1401,7 +1474,7 @@
           "Yuki Tsunoda"
         ]
       },
-      "origin": null,
+      "origin": "Italy",
       "points_by_year": {
         "2024": 46.0
       },
@@ -1424,6 +1497,9 @@
             "position": 9.0
           }
         ]
+      },
+      "standings_by_year": {
+        "2024": 8
       }
     },
     "Racing Bulls": {
@@ -1469,6 +1545,9 @@
             "position": 3.0
           }
         ]
+      },
+      "standings_by_year": {
+        "2025": 6
       }
     }
   },
@@ -1482,5 +1561,5 @@
     2024,
     2025
   ],
-  "version": "v1"
+  "version": "v5"
 }

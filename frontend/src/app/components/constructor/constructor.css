@@ -11,14 +11,14 @@
 }
 
 .card {
-  max-width: 1400px;
-  margin: 2rem auto;
-  padding: 2rem;
   background: linear-gradient(180deg, #141a24, #0f131b);
   border: 1px solid var(--ring);
   border-radius: 18px;
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
 }
+
+
 
 .page-title {
   font-size: 2rem;

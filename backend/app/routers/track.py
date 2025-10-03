@@ -38,6 +38,29 @@ _WINNER_CACHE: Dict[Tuple[int, int], Optional[Dict[str, Any]]] = {}
 _ERGAST_RESULT_CACHE: Dict[Tuple[int, int], Optional[pd.DataFrame]] = {}
 _ERGAST_FAILURES: set[Tuple[int, int]] = set()
 
+# Fallback team colors for when season cache doesn't have them
+# Used especially for 2022 and earlier where FastF1 data may not include colors
+_TEAM_COLORS_FALLBACK: Dict[str, str] = {
+    "Red Bull": "#3671C6",
+    "Red Bull Racing": "#3671C6",
+    "Ferrari": "#E80020",
+    "Mercedes": "#00D2BE",
+    "McLaren": "#FF8000",
+    "Alpine": "#0090FF",
+    "Aston Martin": "#00665F",
+    "Williams": "#005AFF",
+    "AlphaTauri": "#2B4562",
+    "Alfa Romeo": "#900000",
+    "Haas F1 Team": "#FFFFFF",
+    "Racing Point": "#F596C8",
+    "Renault": "#FFF500",
+    "Toro Rosso": "#469BFF",
+    "Force India": "#F596C8",
+    "Sauber": "#900000",
+    "Kick Sauber": "#00E100",
+    "RB": "#6692FF",
+}
+
 _COUNTRY_CODE_ALIASES: Dict[str, str] = {
     "united_states": "us",
     "united_states_of_america": "us",
@@ -729,6 +752,18 @@ def _winner_from_season_cache(year: int, round_number: int) -> Optional[Dict[str
             team = _safe_str(winner_info.get("team")) or _safe_str(winner_info.get("constructor"))
             code = _safe_str(winner_info.get("code"))
             event_name = _safe_str(winner_info.get("event")) or _safe_str(race.get("event_name"))
+            
+            # Get team color from driver index
+            team_color = None
+            if code and isinstance(driver_index, dict):
+                driver_data = driver_index.get(code)
+                if isinstance(driver_data, dict):
+                    team_color = driver_data.get("team_color")
+            
+            # Fallback to team-based color if driver index doesn't have it
+            if not team_color and team:
+                team_color = _TEAM_COLORS_FALLBACK.get(team)
+            
             if driver or team:
                 return {
                     "year": year,
@@ -737,6 +772,7 @@ def _winner_from_season_cache(year: int, round_number: int) -> Optional[Dict[str
                     "team": team,
                     "code": code,
                     "event": event_name,
+                    "team_color": team_color,
                 }
         results = race.get("results") or race.get("classification") or race.get("finishers")
         if isinstance(results, list):
@@ -759,6 +795,18 @@ def _winner_from_season_cache(year: int, round_number: int) -> Optional[Dict[str
                 team = _safe_str(winner_row.get("constructorName")) or _safe_str(winner_row.get("team"))
                 code = _safe_str(winner_row.get("driverCode")) or _safe_str(winner_row.get("code"))
                 event_name = _safe_str(winner_row.get("raceName")) or _safe_str(race.get("event_name"))
+                
+                # Get team color from driver index
+                team_color = None
+                if code and isinstance(driver_index, dict):
+                    driver_data = driver_index.get(code)
+                    if isinstance(driver_data, dict):
+                        team_color = driver_data.get("team_color")
+                
+                # Fallback to team-based color if driver index doesn't have it
+                if not team_color and team:
+                    team_color = _TEAM_COLORS_FALLBACK.get(team)
+                
                 if driver:
                     return {
                         "year": year,
@@ -767,6 +815,7 @@ def _winner_from_season_cache(year: int, round_number: int) -> Optional[Dict[str
                         "team": team,
                         "code": code,
                         "event": event_name,
+                        "team_color": team_color,
                     }
     return None
 
@@ -831,6 +880,17 @@ def _winner_from_ergast(year: int, round_number: int) -> Optional[Dict[str, Any]
     season_payload = _read_json(season_path)
     driver_index = season_payload.get("drivers") if isinstance(season_payload, dict) and isinstance(season_payload.get("drivers"), dict) else {}
     
+    # Get team color from driver index
+    team_color = None
+    if code and isinstance(driver_index, dict):
+        driver_data = driver_index.get(code)
+        if isinstance(driver_data, dict):
+            team_color = driver_data.get("team_color")
+    
+    # Fallback to team-based color if driver index doesn't have it
+    if not team_color and team:
+        team_color = _TEAM_COLORS_FALLBACK.get(team)
+    
     return {
         "year": int(row.get("season", year) or year),
         "round": int(row.get("round", round_number) or round_number),
@@ -838,6 +898,7 @@ def _winner_from_ergast(year: int, round_number: int) -> Optional[Dict[str, Any]
         "team": team,
         "code": code,
         "event": event_name,
+        "team_color": team_color,
     }
 
 

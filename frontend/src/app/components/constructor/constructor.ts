@@ -101,6 +101,8 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onCompare(): void {
+    let cardDiv = document.querySelector('.card');
+    cardDiv?.setAttribute('style', 'padding: 2rem;');
     if (!this.constructor1 || !this.constructor2) {
       this.errorMsg = 'Please select both constructors';
       return;
@@ -191,6 +193,14 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
       const data1 = years.map(y => c1.points_by_year[y.toString()] || 0);
       const data2 = years.map(y => c2.points_by_year[y.toString()] || 0);
 
+      // Get standings positions by year
+      const c1Standings = c1.standings_by_year || {};
+      const c2Standings = c2.standings_by_year || {};
+
+      // Larger radius for championship years (position 1)
+      const pointRadius1 = years.map(y => c1Standings[y.toString()] === 1 ? 8 : 4);
+      const pointRadius2 = years.map(y => c2Standings[y.toString()] === 1 ? 8 : 4);
+
       // Use actual team colors
       const color1 = c1.team_color || '#3b82f6';
       const color2 = c2.team_color || '#ef4444';
@@ -199,6 +209,8 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
         years,
         c1Data: data1,
         c2Data: data2,
+        c1Standings,
+        c2Standings,
         color1,
         color2
       });
@@ -215,6 +227,11 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
             backgroundColor: this.hexToRgba(color1, 0.1),
             tension: 0.3,
             fill: true,
+            pointRadius: pointRadius1,
+            pointHoverRadius: years.map(y => c1Standings[y.toString()] === 1 ? 10 : 6),
+            pointBackgroundColor: color1,
+            pointBorderColor: color1,
+            pointBorderWidth: years.map(y => c1Standings[y.toString()] === 1 ? 2 : 1),
           },
           {
             label: c2.name,
@@ -223,6 +240,11 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
             backgroundColor: this.hexToRgba(color2, 0.1),
             tension: 0.3,
             fill: true,
+            pointRadius: pointRadius2,
+            pointHoverRadius: years.map(y => c2Standings[y.toString()] === 1 ? 10 : 6),
+            pointBackgroundColor: color2,
+            pointBorderColor: color2,
+            pointBorderWidth: years.map(y => c2Standings[y.toString()] === 1 ? 2 : 1),
           }
         ]
       },
@@ -238,6 +260,31 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
           },
           legend: {
             labels: { color: '#e6edf3' }
+          },
+          tooltip: {
+            callbacks: {
+              afterLabel: (context: any) => {
+                const year = years[context.dataIndex];
+                const yearStr = year.toString();
+                const datasetIndex = context.datasetIndex;
+                const position = datasetIndex === 0 
+                  ? c1Standings[yearStr]
+                  : c2Standings[yearStr];
+                
+                if (!position) return '';
+                
+                // Convert position to ordinal (1st, 2nd, 3rd, etc.)
+                const getOrdinal = (n: number): string => {
+                  const s = ['th', 'st', 'nd', 'rd'];
+                  const v = n % 100;
+                  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+                };
+                
+                const positionText = getOrdinal(position) + ' place';
+                // Show crown only for 1st place
+                return position === 1 ? `${positionText} 👑` : positionText;
+              }
+            }
           }
         },
         scales: {

@@ -38,6 +38,7 @@ export interface ConstructorSummary {
   points_by_year: Record<string, number>;
   wins_by_year: Record<string, number>;
   podiums_by_year: Record<string, number>;
+  standings_by_year: Record<string, number>;
   best_result: {
     year: number;
     round: number;
@@ -100,6 +101,7 @@ export interface RaceWinnerInfo {
   team: string;
   code?: string;
   event?: string;
+  team_color?: string;
 }
 
 export interface TrackLayoutVariant {
