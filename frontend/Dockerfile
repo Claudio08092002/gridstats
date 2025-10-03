@@ -4,6 +4,8 @@ WORKDIR /app
 COPY frontend/package*.json ./
 RUN npm ci
 COPY frontend/ ./
+# Copy tracks_cache from backend to frontend assets before build
+COPY backend/app/tracks_cache ./public/assets/tracks_cache
 ARG ANGULAR_PROJECT=frontend
 RUN npm run build -- --configuration production \
  && mkdir -p /app/build \
