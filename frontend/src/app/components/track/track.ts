@@ -343,14 +343,18 @@ export class TrackComponent implements OnInit, OnDestroy {
     const sanitizedKey = this.sanitizeCacheKey(this.selectedKey ?? '');
     if (sanitizedKey) {
       const bundleUrl = `assets/tracks_cache/trackmap_${sanitizedKey}.json`;
+      console.log(`[TRACK LOAD] Attempting to load from bundle: ${bundleUrl}`);
       this.http.get<any>(bundleUrl).subscribe({
         next: (bundle) => {
+          console.log(`[TRACK LOAD] Bundle loaded successfully`, bundle);
           if (bundle && typeof bundle === 'object' && bundle.entries) {
             const key = `${roundRef.year}-${roundRef.round}`;
             let entry = bundle.entries[key];
+            console.log(`[TRACK LOAD] Looking for entry ${key}, found:`, !!entry);
             
             // Fallback: if requested year-round doesn't exist, use the most recent cached entry
             if (!entry || !entry.track) {
+              console.log(`[TRACK LOAD] Entry not found or invalid, trying fallback`);
               const entryKeys = Object.keys(bundle.entries || {});
               if (entryKeys.length > 0) {
                 // Sort entries by year-round (descending) and pick the most recent
@@ -378,6 +382,12 @@ export class TrackComponent implements OnInit, OnDestroy {
             }
             
             if (entry && entry.track) {
+              console.log(`[TRACK LOAD] Using bundle entry, has all required fields:`, {
+                track: !!entry.track,
+                winners: !!entry.winners,
+                layout_variants: !!entry.layout_variants,
+                layout_years: !!entry.layout_years
+              });
               // Merge the cached entry into a TrackMapResponse-like object.
               // Enhanced cache files now include winners, layout_variants, and layout_years!
               const fromBundle: TrackMapResponse = {
@@ -438,6 +448,7 @@ export class TrackComponent implements OnInit, OnDestroy {
    * subscribe/callbacks in loadTrackMap.
    */
   private _loadTrackMapViaApi(roundRef: TrackRoundRef, includeLayouts: boolean): void {
+    console.log(`[TRACK LOAD] Falling back to API for ${roundRef.year}-${roundRef.round}`);
     this.loading = true;
     this.error = null;
     this.selectedRound = roundRef;
