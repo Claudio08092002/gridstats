@@ -140,3 +140,24 @@
 .close-btn:active {
   transform: scale(0.95);
 }
+
+/* Mobile: prevent brand/nav overlap and stack neatly */
+@media (max-width: 640px) {
+  .topbar .container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.4rem;
+    padding: 0.6rem 0.8rem;
+  }
+  .brand { font-size: 1.1rem; }
+  .nav.center {
+    position: static;
+    left: auto;
+    transform: none;
+    display: flex;
+    justify-content: space-between;
+    gap: 0.6rem;
+    width: 100%;
+  }
+  .nav a { padding: 0.4rem 0.55rem; font-size: 0.9rem; }
+}

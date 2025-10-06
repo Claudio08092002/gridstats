@@ -91,6 +91,8 @@
     </div>
   </div>
 
+
+
   <div id="track-details-card" class="map-card" *ngIf="trackMap || loading || error" [class.map-card--loading]="loading">
     <svg class="track" id="trackMap" width="900" height="600"></svg>
     <div class="map-overlay" *ngIf="loading">Loading track …</div>
@@ -114,5 +116,3 @@
 
 </div>
   <footer class="footer">© {{ currentYear }} GridStats</footer>
-
-

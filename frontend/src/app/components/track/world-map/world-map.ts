@@ -31,6 +31,12 @@ export class TrackWorldMapComponent implements OnInit, OnChanges, OnDestroy {
   private features: any[] = [];
   private countsByCode: Record<string, number> = {};
   private zoomBehavior: any = null;
+  private viewWidth = 0;
+  private viewHeight = 0;
+  // Use loose typings to remain compatible with stubbed d3 types
+  private currentPath: any = null;
+  private svgSel: any = null;
+  private gSel: any = null;
 
   ngOnInit(): void {
     if (!this.isBrowser) return;
@@ -156,13 +162,18 @@ export class TrackWorldMapComponent implements OnInit, OnChanges, OnDestroy {
     const height = Math.floor(width * 0.52);
 
     const svg = d3.select(svgEl);
+    this.svgSel = svg as any;
+    this.viewWidth = width;
+    this.viewHeight = height;
     svg.attr('viewBox', `0 0 ${width} ${height}`);
     svg.selectAll('*').remove();
 
     const projection = d3.geoNaturalEarth1().fitSize([width, height], { type: 'FeatureCollection', features: this.features as any });
     const path = d3.geoPath(projection);
+    this.currentPath = path;
 
     const g = svg.append('g');
+    this.gSel = g as any;
     const self = this;
 
     g.selectAll('path.country')
@@ -199,6 +210,7 @@ export class TrackWorldMapComponent implements OnInit, OnChanges, OnDestroy {
         if (this.countsByCode[code] > 0) {
           this.selectedCode = code;
           this.highlightSelected();
+          this.zoomToFeature(d);
           this.countrySelect.emit({ code, name });
         }
       })
@@ -227,6 +239,38 @@ export class TrackWorldMapComponent implements OnInit, OnChanges, OnDestroy {
       const code = this.iso2Of(d);
       return !!this.selectedCode && code === this.selectedCode.toUpperCase();
     });
+    // Auto-zoom if selectedCode was set externally
+    if (this.selectedCode) {
+      const f = (this.features || []).find((ft: any) => this.iso2Of(ft) === this.selectedCode);
+      if (f) this.zoomToFeature(f);
+    }
+  }
+
+  private zoomToFeature(feature: any): void {
+    if (!this.isBrowser || !this.svgSel || !this.gSel || !this.currentPath) return;
+    try {
+      const bounds = this.currentPath.bounds(feature);
+      const [[x0, y0], [x1, y1]] = bounds as any;
+      const bw = x1 - x0;
+      const bh = y1 - y0;
+      if (!(isFinite(bw) && isFinite(bh) && bw > 0 && bh > 0)) return;
+      const width = this.viewWidth;
+      const height = this.viewHeight;
+      const padding = 40;
+      const k = Math.min((width - padding) / bw, (height - padding) / bh, 18);
+      const x = (x0 + x1) / 2;
+      const y = (y0 + y1) / 2;
+      const transform = (d3 as any).zoomIdentity
+        .translate(width / 2, height / 2)
+        .scale(k)
+        .translate(-x, -y);
+      if (this.zoomBehavior && this.svgSel) {
+        (this.svgSel as any)
+          .transition()
+          .duration(400)
+          .call(this.zoomBehavior.transform, transform);
+      }
+    } catch {}
   }
 
   // Public API: reset zoom/pan and clear selection highlight

@@ -221,6 +221,22 @@ export class TrackComponent implements OnInit, OnDestroy {
     return this.layoutYears?.length ? this.layoutYears.join(', ') : '';
   }
 
+  // Safe accessors for optional metadata that may not exist in the strict type
+  get drsZones(): string {
+    const v = (this.trackMap as any)?.drs_zones;
+    return (v !== undefined && v !== null && v !== '') ? String(v) : '—';
+  }
+
+  get sectorsCount(): string {
+    const v = (this.trackMap as any)?.sectors;
+    return (v !== undefined && v !== null && v !== '') ? String(v) : '—';
+  }
+
+  get lapRecord(): string {
+    const v = (this.trackMap as any)?.lap_record;
+    return (v !== undefined && v !== null && v !== '') ? String(v) : '—';
+  }
+
   get selectedVariantRounds(): TrackRoundRef[] {
     const variant = this.layoutVariants.find((item) => item.layout_signature === this.selectedVariantSignature);
     if (!variant) {
@@ -387,6 +403,10 @@ export class TrackComponent implements OnInit, OnDestroy {
         this.selectedVariantSignature = null;
       }
       this.drawTrackMap(cached);
+      // If cache lacks winners, hydrate them from API in background
+      if (!this.winners || this.winners.length === 0) {
+        this.hydrateWinners(roundRef.year, roundRef.round);
+      }
       return;
     }
 
@@ -482,6 +502,10 @@ export class TrackComponent implements OnInit, OnDestroy {
                 this.selectedVariantSignature = null;
               }
               this.drawTrackMap(fromBundle);
+              // If bundle lacks winners, hydrate from API
+              if (!this.winners || this.winners.length === 0) {
+                this.hydrateWinners(roundRef.year, roundRef.round);
+              }
               return;
             }
           }
@@ -550,6 +574,32 @@ export class TrackComponent implements OnInit, OnDestroy {
       error: (err) => {
         this.loading = false;
         this.error = err?.error?.detail ?? err?.message ?? 'Failed to load track map';
+      },
+    });
+  }
+
+  // Hydrate winners information from API if the cache/bundle lacked it
+  private hydrateWinners(year: number, round: number): void {
+    this.api.getTrackMap(year, round, { includeLayouts: false }).subscribe({
+      next: (map) => {
+        const winners = (Array.isArray(map.winners) && map.winners.length)
+          ? map.winners
+          : (map as any).winner
+            ? [ (map as any).winner as RaceWinnerInfo ]
+            : [];
+        if (winners && winners.length) {
+          this.winners = winners;
+          if (this.trackMap) {
+            this.trackMap.winners = winners;
+          }
+          // Persist hydrated winners to localStorage cache for this year/round
+          if (this.trackMap) {
+            this.saveToCache(year, round, this.trackMap);
+          }
+        }
+      },
+      error: () => {
+        // Silent failure; winners stay absent
       },
     });
   }
@@ -682,9 +732,88 @@ export class TrackComponent implements OnInit, OnDestroy {
       .ease(d3.easeCubicInOut)
       .attr('stroke-dashoffset', 0);
 
-    // The path animation completes here. In earlier revisions we emitted
-    // diagnostic logs about the number of corners, but this is no
-    // longer necessary.
+    // Overlays: sectors and DRS zones (if provided by backend)
+    const totalLengthDist = trackData[trackData.length - 1]?.distance ?? 0;
+    const drsSegments: Array<{ start: number; end: number }> = [];
+    const rawDrs: any = (trackMapData as any)?.drs_segments || (trackMapData as any)?.drsZones || [];
+    if (Array.isArray(rawDrs)) {
+      rawDrs.forEach((seg: any) => {
+        const s = Number(seg.start_distance ?? seg.start ?? seg[0]);
+        const e = Number(seg.end_distance ?? seg.end ?? seg[1]);
+        if (isFinite(s) && isFinite(e)) drsSegments.push({ start: s, end: e });
+      });
+    }
+
+    const sectorSegments: Array<{ start: number; end: number }> = [];
+    const rawSectorSegments: any = (trackMapData as any)?.sectors_segments;
+    const rawSplits: any = (trackMapData as any)?.sector_splits;
+    if (Array.isArray(rawSectorSegments) && rawSectorSegments.length) {
+      rawSectorSegments.forEach((seg: any) => {
+        const s = Number(seg.start_distance ?? seg.start ?? seg[0]);
+        const e = Number(seg.end_distance ?? seg.end ?? seg[1]);
+        if (isFinite(s) && isFinite(e)) sectorSegments.push({ start: s, end: e });
+      });
+    } else if (Array.isArray(rawSplits) && rawSplits.length >= 2 && isFinite(totalLengthDist) && totalLengthDist > 0) {
+      const s1 = Number(rawSplits[0]);
+      const s2 = Number(rawSplits[1]);
+      if (isFinite(s1) && isFinite(s2)) {
+        sectorSegments.push({ start: 0, end: s1 });
+        sectorSegments.push({ start: s1, end: s2 });
+        sectorSegments.push({ start: s2, end: totalLengthDist });
+      }
+    }
+
+    const overlayLine = d3
+      .line()
+      .x((d: unknown) => projectX((d as TrackPoint).x))
+      .y((d: unknown) => projectY((d as TrackPoint).y))
+      .curve(d3.curveLinear);
+
+    const sampleSegment = (start: number, end: number): TrackPoint[] => {
+      if (!isFinite(start) || !isFinite(end)) return [];
+      if (start <= end) {
+        return trackData.filter(p => p.distance >= start && p.distance <= end);
+      }
+      // wrap-around segment
+      const a = trackData.filter(p => p.distance >= start);
+      const b = trackData.filter(p => p.distance <= end);
+      return a.concat(b);
+    };
+
+    if (sectorSegments.length) {
+      const sectorColors = ['#fb923c', '#a78bfa', '#34d399'];
+      sectorSegments.forEach((seg, i) => {
+        const pts = sampleSegment(seg.start, seg.end);
+        if (pts.length > 1) {
+          svg
+            .append('path')
+            .datum(pts)
+            .attr('fill', 'none')
+            .attr('stroke', sectorColors[i % sectorColors.length])
+            .attr('stroke-width', 6)
+            .attr('d', overlayLine)
+            .attr('opacity', 0.85);
+        }
+      });
+    }
+
+    if (drsSegments.length) {
+      drsSegments.forEach((seg) => {
+        const pts = sampleSegment(seg.start, seg.end);
+        if (pts.length > 1) {
+          svg
+            .append('path')
+            .datum(pts)
+            .attr('fill', 'none')
+            .attr('stroke', '#22c55e')
+            .attr('stroke-width', 8)
+            .attr('stroke-linecap', 'round')
+            .attr('stroke-dasharray', '10,8')
+            .attr('d', overlayLine)
+            .attr('opacity', 0.9);
+        }
+      });
+    }
 
     if (!cornerData.length) {
       // If the layout contains no corner metadata just return early. The

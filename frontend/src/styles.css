@@ -58,3 +58,13 @@ select, input, button {
 .accent-color {
   color: var(--accent);
 }
+
+/* Mobile global adjustments */
+@media (max-width: 640px) {
+  .topbar .container { padding: 0.6rem 0.8rem; }
+  .brand { font-size: 1.1rem; }
+  .nav.center { position: static; transform: none; gap: 0.6rem; justify-content: space-between; }
+  .nav a { padding: 0.4rem 0.55rem; font-size: 0.9rem; }
+  .page { padding: 1rem 0.6rem 1.5rem; }
+  .container { max-width: 100%; }
+}

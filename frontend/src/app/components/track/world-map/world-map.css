@@ -138,7 +138,7 @@
 
 /* Zoom affordance */
 .worldmap-canvas:after {
-  content: 'Scroll to zoom â€¢ Drag to pan';
+  content: 'Scroll to zoom • Drag to pan';
   position: absolute;
   bottom: 10px;
   left: 16px;
@@ -149,3 +149,13 @@
 
 .worldmap-svg path.country { pointer-events: all; }
 
+
+@media (max-width: 640px) {
+  .worldmap-wrapper { border-radius: 14px; }
+  .worldmap-title { font-size: 0.95rem; }
+  .worldmap-canvas { padding: 12px; }
+  .wm-controls { top: 8px; right: 8px; }
+  .wm-btn { padding: 5px 8px; border-radius: 8px; font-size: 11px; }
+  .worldmap-svg { max-height: 46vh; }
+  .worldmap-hint { font-size: 11px; opacity: 0.85; }
+}
