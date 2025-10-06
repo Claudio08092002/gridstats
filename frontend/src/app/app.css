@@ -89,3 +89,54 @@
   transition: background .15s ease, color .15s ease;
   cursor: pointer;
 }
+
+/* Data notice banner */
+.data-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(100, 116, 139, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: #94a3b8;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.data-notice:hover {
+  background: rgba(100, 116, 139, 0.12);
+}
+
+.notice-text {
+  flex: 1;
+  font-weight: 500;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 12px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.close-btn:hover {
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
+}
+
+.close-btn:active {
+  transform: scale(0.95);
+}

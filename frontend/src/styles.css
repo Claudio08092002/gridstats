@@ -10,6 +10,37 @@ html, body {
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
 }
 
+/* Theme variables */
+:root {
+  --accent: #38bdf8; /* cyan accent used across pages */
+}
+
+/* Accent utility */
+.text-accent { color: var(--accent); }
+.link-accent { color: var(--accent); text-decoration: none; }
+.link-accent:hover { text-decoration: underline; }
+
+/* Accent button shared style */
+.btn--accent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: linear-gradient(135deg, rgba(56,189,248,0.95), #5ec8ff);
+  color: #0b0b0d;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  box-shadow: 0 10px 24px rgba(56, 189, 248, 0.28);
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+.btn--accent:hover { transform: translateY(-1px); filter: brightness(1.03); }
+.btn--accent:active { transform: translateY(0); filter: brightness(0.98); }
+.btn--accent:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+
 /* Form Controls – dunkle Felder global angleichen */
 select, input, button {
   font-family: inherit;
@@ -23,3 +54,7 @@ select, input, button {
 *::-webkit-scrollbar { height: 10px; width: 10px; }
 *::-webkit-scrollbar-thumb { background: #2a2f35; border-radius: 8px; }
 *::-webkit-scrollbar-track { background: transparent; }
+
+.accent-color {
+  color: var(--accent);
+}

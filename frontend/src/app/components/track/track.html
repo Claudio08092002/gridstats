@@ -1,5 +1,44 @@
 <div class="card">
+  <!-- World map explorer -->
+  <div class="world-explore">
+    <div class="world-grid">
+      <app-track-world-map
+        [tracks]="tracks"
+        [selectedCode]="selectedCountryCode"
+        (countrySelect)="onCountrySelected($event)">
+      </app-track-world-map>
+
+      <div class="country-panel" *ngIf="!selectedTrack">
+        <div class="country-header" *ngIf="selectedCountryCode; else countryHint">
+          <div class="country-flag" *ngIf="selectedCountryCode as code">
+            <span class="flag-icon" [ngClass]="['fi', 'fi-' + code.toLowerCase()]"></span>
+          </div>
+          <div class="country-title">
+            <h3>{{ selectedCountryName || selectedCountryCode }}</h3>
+            <span class="muted">{{ countryTracks.length }} track{{ countryTracks.length > 1 ? 's' : '' }}</span>
+          </div>
+        </div>
+        <ng-template #countryHint>
+          <div class="country-empty">
+            <span class="accent-color">Select a country on the map</span>
+          </div>
+        </ng-template>
+
+        <div class="country-list" *ngIf="countryTracks.length">
+          <button class="country-track" *ngFor="let t of countryTracks" (click)="selectTrackFromCountry(t)">
+            <div class="ct-title">{{ t.display_name }}</div>
+            <div class="ct-sub" *ngIf="t.location || t.country">
+              <span *ngIf="t.location">{{ t.location }}</span>
+              <span *ngIf="t.country"> • {{ t.country }}</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="controls">
+    <!----
     <div class="field span-6">
       <label for="trackSelect">Grand Prix</label>
       <select
@@ -8,12 +47,13 @@
         [(ngModel)]="selectedKey"
         (ngModelChange)="onSelectTrack()"
       >
-        <option [ngValue]="null" disabled>— choose a track —</option>
+        <option [ngValue]="null" disabled>— Select a Track —</option>
         <option *ngFor="let track of tracks" [ngValue]="track.key">
           {{ track.country_code ? track.country_code + ' - ' : '' }}{{ track.display_name }}
         </option>
       </select>
     </div>
+    -->
 
     <div class="field span-3" *ngIf="layoutVariants.length > 1">
       <label for="variantSelect">Layout</label>
@@ -38,8 +78,8 @@
       <h2>{{ selectedTrack.display_name }}</h2>
       <div class="subtitle">
         <span *ngIf="selectedTrack.location">{{ selectedTrack.location }}</span>
-        <span *ngIf="selectedTrack.country">• {{ selectedTrack.country }}</span>
-        <span *ngIf="selectedRound">• {{ selectedRound.year }} (Round {{ selectedRound.round }})</span>
+        <span *ngIf="selectedTrack.country"> • {{ selectedTrack.country }}</span>
+        <span *ngIf="selectedRound"> • {{ selectedRound.year }} (Round {{ selectedRound.round }})</span>
       </div>
     </div>
   </div>
@@ -51,8 +91,8 @@
     </div>
   </div>
 
-  <div class="map-card" *ngIf="trackMap || loading || error" [class.map-card--loading]="loading">
-    <svg class="track" id="trackMap" width="800" height="600"></svg>
+  <div id="track-details-card" class="map-card" *ngIf="trackMap || loading || error" [class.map-card--loading]="loading">
+    <svg class="track" id="trackMap" width="900" height="600"></svg>
     <div class="map-overlay" *ngIf="loading">Loading track …</div>
     <div class="map-overlay error" *ngIf="!loading && error">{{ error }}</div>
   </div>
@@ -74,3 +114,5 @@
 
 </div>
   <footer class="footer">© {{ currentYear }} GridStats</footer>
+
+

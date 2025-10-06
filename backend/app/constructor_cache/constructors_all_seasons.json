@@ -3,10 +3,10 @@
     "Ferrari": {
       "name": "Ferrari",
       "team_color": "#DC0000",
-      "total_points": 3427.5,
-      "wins": 19,
-      "podiums": 107,
-      "poles": 41,
+      "total_points": 3333.5,
+      "wins": 18,
+      "podiums": 101,
+      "poles": 34,
       "season_count": 8,
       "seasons": [
         2018,
@@ -66,16 +66,16 @@
         "2018": 571.0,
         "2019": 504.0,
         "2020": 131.0,
-        "2021": 323.5,
-        "2022": 554.0,
-        "2023": 406.0,
-        "2024": 652.0,
-        "2025": 286.0
+        "2021": 327.5,
+        "2022": 420.0,
+        "2023": 434.0,
+        "2024": 648.0,
+        "2025": 298.0
       },
       "wins_by_year": {
         "2018": 6,
         "2019": 3,
-        "2022": 4,
+        "2022": 3,
         "2023": 1,
         "2024": 5
       },
@@ -84,25 +84,25 @@
         "2019": 19,
         "2020": 3,
         "2021": 5,
-        "2022": 20,
-        "2023": 9,
-        "2024": 22,
+        "2022": 15,
+        "2023": 10,
+        "2024": 20,
         "2025": 5
       },
       "best_result": {
-        "year": 2022,
-        "round": 1,
-        "event": "Bahrain Grand Prix",
+        "year": 2024,
+        "round": 3,
+        "event": "Australian Grand Prix",
         "points": 44.0,
         "drivers": [
           {
-            "name": "Charles Leclerc",
-            "points": 26.0,
+            "name": "Carlos Sainz",
+            "points": 25.0,
             "position": 1.0
           },
           {
-            "name": "Carlos Sainz",
-            "points": 18.0,
+            "name": "Charles Leclerc",
+            "points": 19.0,
             "position": 2.0
           }
         ]
@@ -113,7 +113,7 @@
         "2020": 6,
         "2021": 3,
         "2022": 2,
-        "2023": 3,
+        "2023": 2,
         "2024": 2,
         "2025": 3
       }
@@ -121,9 +121,9 @@
     "Mercedes": {
       "name": "Mercedes",
       "team_color": "#00D2BE",
-      "total_points": 4262.5,
+      "total_points": 4175.5,
       "wins": 54,
-      "podiums": 152,
+      "podiums": 148,
       "poles": 54,
       "season_count": 8,
       "seasons": [
@@ -183,30 +183,29 @@
         "2018": 655.0,
         "2019": 739.0,
         "2020": 573.0,
-        "2021": 613.5,
-        "2022": 515.0,
-        "2023": 409.0,
-        "2024": 468.0,
-        "2025": 290.0
+        "2021": 609.5,
+        "2022": 393.0,
+        "2023": 404.0,
+        "2024": 477.0,
+        "2025": 325.0
       },
       "wins_by_year": {
         "2018": 11,
         "2019": 15,
         "2020": 13,
         "2021": 9,
-        "2022": 1,
         "2024": 4,
-        "2025": 1
+        "2025": 2
       },
       "podiums_by_year": {
         "2018": 25,
         "2019": 32,
         "2020": 25,
-        "2021": 28,
-        "2022": 17,
+        "2021": 26,
+        "2022": 13,
         "2023": 8,
-        "2024": 9,
-        "2025": 8
+        "2024": 10,
+        "2025": 9
       },
       "best_result": {
         "year": 2019,
@@ -232,7 +231,7 @@
         "2020": 1,
         "2021": 1,
         "2022": 3,
-        "2023": 2,
+        "2023": 3,
         "2024": 4,
         "2025": 2
       }
@@ -240,10 +239,10 @@
     "Red Bull Racing": {
       "name": "Red Bull Racing",
       "team_color": "#1E41FF",
-      "total_points": 4185.5,
-      "wins": 71,
-      "podiums": 142,
-      "poles": 51,
+      "total_points": 4108.5,
+      "wins": 69,
+      "podiums": 140,
+      "poles": 46,
       "season_count": 8,
       "seasons": [
         2018,
@@ -306,18 +305,18 @@
         "2018": 419.0,
         "2019": 417.0,
         "2020": 319.0,
-        "2021": 585.5,
-        "2022": 724.0,
-        "2023": 860.0,
-        "2024": 589.0,
-        "2025": 272.0
+        "2021": 588.5,
+        "2022": 632.0,
+        "2023": 853.0,
+        "2024": 590.0,
+        "2025": 290.0
       },
       "wins_by_year": {
         "2018": 4,
         "2019": 3,
         "2020": 2,
         "2021": 11,
-        "2022": 17,
+        "2022": 15,
         "2023": 21,
         "2024": 9,
         "2025": 4
@@ -327,10 +326,10 @@
         "2019": 9,
         "2020": 13,
         "2021": 23,
-        "2022": 28,
+        "2022": 25,
         "2023": 30,
         "2024": 18,
-        "2025": 8
+        "2025": 9
       },
       "best_result": {
         "year": 2022,
@@ -364,10 +363,10 @@
     "McLaren": {
       "name": "McLaren",
       "team_color": "#FF8700",
-      "total_points": 2433.0,
+      "total_points": 2419.0,
       "wins": 19,
-      "podiums": 66,
-      "poles": 18,
+      "podiums": 67,
+      "poles": 14,
       "season_count": 8,
       "seasons": [
         2018,
@@ -426,12 +425,12 @@
       "points_by_year": {
         "2018": 62.0,
         "2019": 145.0,
-        "2020": 202.0,
-        "2021": 275.0,
-        "2022": 159.0,
-        "2023": 302.0,
-        "2024": 665.0,
-        "2025": 623.0
+        "2020": 201.0,
+        "2021": 270.0,
+        "2022": 151.0,
+        "2023": 291.0,
+        "2024": 649.0,
+        "2025": 650.0
       },
       "wins_by_year": {
         "2021": 1,
@@ -445,7 +444,7 @@
         "2022": 1,
         "2023": 9,
         "2024": 21,
-        "2025": 27
+        "2025": 28
       },
       "best_result": {
         "year": 2021,
@@ -470,7 +469,7 @@
         "2019": 4,
         "2020": 4,
         "2021": 4,
-        "2022": 5,
+        "2022": 4,
         "2023": 4,
         "2024": 1,
         "2025": 1
@@ -639,7 +638,7 @@
     "Williams": {
       "name": "Williams",
       "team_color": "#FFFFFF",
-      "total_points": 185.0,
+      "total_points": 177.0,
       "wins": 0,
       "podiums": 2,
       "poles": 0,
@@ -654,7 +653,7 @@
         2024,
         2025
       ],
-      "total_drivers": 11,
+      "total_drivers": 10,
       "drivers": [
         "Alexander Albon",
         "Carlos Sainz",
@@ -664,7 +663,6 @@
         "Lance Stroll",
         "Logan Sargeant",
         "Nicholas Latifi",
-        "Nyck de Vries",
         "Robert Kubica",
         "Sergey Sirotkin"
       ],
@@ -708,11 +706,11 @@
         "2018": 7.0,
         "2019": 1.0,
         "2020": 0.0,
-        "2021": 23.0,
-        "2022": 8.0,
-        "2023": 28.0,
-        "2024": 17.0,
-        "2025": 101.0
+        "2021": 13.0,
+        "2022": 5.0,
+        "2023": 30.0,
+        "2024": 19.0,
+        "2025": 102.0
       },
       "wins_by_year": {},
       "podiums_by_year": {
@@ -736,7 +734,7 @@
         "2018": 11,
         "2019": 10,
         "2020": 12,
-        "2021": 8,
+        "2021": 9,
         "2022": 10,
         "2023": 7,
         "2024": 9,
@@ -808,9 +806,9 @@
     "Haas F1 Team": {
       "name": "Haas F1 Team",
       "team_color": "#828282",
-      "total_points": 275.0,
+      "total_points": 278.0,
       "wins": 0,
-      "podiums": 0,
+      "podiums": 1,
       "poles": 0,
       "season_count": 8,
       "seasons": [
@@ -873,14 +871,16 @@
         "2018": 93.0,
         "2019": 28.0,
         "2020": 3.0,
-        "2021": 0.0,
-        "2022": 37.0,
-        "2023": 12.0,
+        "2021": 18.0,
+        "2022": 26.0,
+        "2023": 6.0,
         "2024": 58.0,
-        "2025": 44.0
+        "2025": 46.0
       },
       "wins_by_year": {},
-      "podiums_by_year": {},
+      "podiums_by_year": {
+        "2021": 1
+      },
       "best_result": {
         "year": 2018,
         "round": 9,
@@ -903,10 +903,10 @@
         "2018": 5,
         "2019": 9,
         "2020": 9,
-        "2021": 14,
+        "2021": 8,
         "2022": 8,
         "2023": 10,
-        "2024": 7,
+        "2024": 8,
         "2025": 9
       }
     },
@@ -916,7 +916,7 @@
       "total_points": 335.0,
       "wins": 1,
       "podiums": 4,
-      "poles": 1,
+      "poles": 0,
       "season_count": 3,
       "seasons": [
         2018,
@@ -984,7 +984,7 @@
     "Alfa Romeo Racing": {
       "name": "Alfa Romeo Racing",
       "team_color": "#9b0000",
-      "total_points": 78.0,
+      "total_points": 77.0,
       "wins": 0,
       "podiums": 0,
       "poles": 0,
@@ -1018,7 +1018,7 @@
       "points_by_year": {
         "2019": 57.0,
         "2020": 8.0,
-        "2021": 13.0
+        "2021": 12.0
       },
       "wins_by_year": {},
       "podiums_by_year": {},
@@ -1043,13 +1043,13 @@
       "standings_by_year": {
         "2019": 8,
         "2020": 8,
-        "2021": 9
+        "2021": 10
       }
     },
     "AlphaTauri": {
       "name": "AlphaTauri",
       "team_color": "#ffffff",
-      "total_points": 309.0,
+      "total_points": 279.0,
       "wins": 1,
       "podiums": 2,
       "poles": 0,
@@ -1092,9 +1092,9 @@
       "origin": "Italy",
       "points_by_year": {
         "2020": 107.0,
-        "2021": 142.0,
-        "2022": 35.0,
-        "2023": 25.0
+        "2021": 123.0,
+        "2022": 25.0,
+        "2023": 24.0
       },
       "wins_by_year": {
         "2020": 1
@@ -1131,7 +1131,7 @@
     "Aston Martin": {
       "name": "Aston Martin",
       "team_color": "#006F62",
-      "total_points": 568.0,
+      "total_points": 571.0,
       "wins": 0,
       "podiums": 9,
       "poles": 0,
@@ -1174,22 +1174,22 @@
       },
       "origin": "United Kingdom",
       "points_by_year": {
-        "2021": 77.0,
-        "2022": 55.0,
-        "2023": 280.0,
-        "2024": 94.0,
-        "2025": 62.0
+        "2021": 96.0,
+        "2022": 50.0,
+        "2023": 273.0,
+        "2024": 84.0,
+        "2025": 68.0
       },
       "wins_by_year": {},
       "podiums_by_year": {
-        "2021": 1,
-        "2023": 8
+        "2021": 2,
+        "2023": 7
       },
       "best_result": {
         "year": 2023,
-        "round": 3,
-        "event": "Australian Grand Prix",
-        "points": 27.0,
+        "round": 20,
+        "event": "S\u00e3o Paulo Grand Prix",
+        "points": 25.0,
         "drivers": [
           {
             "name": "Fernando Alonso",
@@ -1198,8 +1198,8 @@
           },
           {
             "name": "Lance Stroll",
-            "points": 12.0,
-            "position": 4.0
+            "points": 10.0,
+            "position": 5.0
           }
         ]
       },
@@ -1214,7 +1214,7 @@
     "Alpine": {
       "name": "Alpine",
       "team_color": "#0090FF",
-      "total_points": 360.0,
+      "total_points": 357.0,
       "wins": 1,
       "podiums": 6,
       "poles": 0,
@@ -1254,9 +1254,9 @@
       },
       "origin": "France",
       "points_by_year": {
-        "2021": 155.0,
-        "2023": 120.0,
-        "2024": 65.0,
+        "2021": 147.0,
+        "2023": 126.0,
+        "2024": 64.0,
         "2025": 20.0
       },
       "wins_by_year": {
@@ -1268,20 +1268,20 @@
         "2024": 2
       },
       "best_result": {
-        "year": 2021,
-        "round": 11,
-        "event": "Hungarian Grand Prix",
-        "points": 37.0,
+        "year": 2024,
+        "round": 21,
+        "event": "S\u00e3o Paulo Grand Prix",
+        "points": 33.0,
         "drivers": [
           {
             "name": "Esteban Ocon",
-            "points": 25.0,
-            "position": 1.0
+            "points": 18.0,
+            "position": 2.0
           },
           {
-            "name": "Fernando Alonso",
-            "points": 12.0,
-            "position": 4.0
+            "name": "Pierre Gasly",
+            "points": 15.0,
+            "position": 3.0
           }
         ]
       },
@@ -1292,10 +1292,60 @@
         "2025": 10
       }
     },
+    "Alpine F1 Team": {
+      "name": "Alpine F1 Team",
+      "team_color": "#888888",
+      "total_points": 135.0,
+      "wins": 0,
+      "podiums": 0,
+      "poles": 0,
+      "season_count": 1,
+      "seasons": [
+        2022
+      ],
+      "total_drivers": 2,
+      "drivers": [
+        "Esteban Ocon",
+        "Fernando Alonso"
+      ],
+      "drivers_by_year": {
+        "2022": [
+          "Esteban Ocon",
+          "Fernando Alonso"
+        ]
+      },
+      "origin": null,
+      "points_by_year": {
+        "2022": 135.0
+      },
+      "wins_by_year": {},
+      "podiums_by_year": {},
+      "best_result": {
+        "year": 2022,
+        "round": 18,
+        "event": "Japanese Grand Prix",
+        "points": 18.0,
+        "drivers": [
+          {
+            "name": "Esteban Ocon",
+            "points": 12.0,
+            "position": 4.0
+          },
+          {
+            "name": "Fernando Alonso",
+            "points": 6.0,
+            "position": 7.0
+          }
+        ]
+      },
+      "standings_by_year": {
+        "2022": 5
+      }
+    },
     "Alfa Romeo": {
       "name": "Alfa Romeo",
       "team_color": "#C92D4B",
-      "total_points": 71.0,
+      "total_points": 57.0,
       "wins": 0,
       "podiums": 0,
       "poles": 0,
@@ -1321,8 +1371,8 @@
       },
       "origin": "Switzerland",
       "points_by_year": {
-        "2022": 55.0,
-        "2023": 16.0
+        "2022": 43.0,
+        "2023": 14.0
       },
       "wins_by_year": {},
       "podiums_by_year": {},
@@ -1342,56 +1392,6 @@
       "standings_by_year": {
         "2022": 7,
         "2023": 9
-      }
-    },
-    "Alpine F1 Team": {
-      "name": "Alpine F1 Team",
-      "team_color": "#888888",
-      "total_points": 173.0,
-      "wins": 0,
-      "podiums": 0,
-      "poles": 0,
-      "season_count": 1,
-      "seasons": [
-        2022
-      ],
-      "total_drivers": 2,
-      "drivers": [
-        "Esteban Ocon",
-        "Fernando Alonso"
-      ],
-      "drivers_by_year": {
-        "2022": [
-          "Esteban Ocon",
-          "Fernando Alonso"
-        ]
-      },
-      "origin": null,
-      "points_by_year": {
-        "2022": 173.0
-      },
-      "wins_by_year": {},
-      "podiums_by_year": {},
-      "best_result": {
-        "year": 2022,
-        "round": 18,
-        "event": "Japanese Grand Prix",
-        "points": 18.0,
-        "drivers": [
-          {
-            "name": "Esteban Ocon",
-            "points": 12.0,
-            "position": 4.0
-          },
-          {
-            "name": "Fernando Alonso",
-            "points": 6.0,
-            "position": 7.0
-          }
-        ]
-      },
-      "standings_by_year": {
-        "2022": 4
       }
     },
     "Kick Sauber": {
@@ -1453,9 +1453,9 @@
     "RB": {
       "name": "RB",
       "team_color": "#6692ff",
-      "total_points": 46.0,
+      "total_points": 59.0,
       "wins": 0,
-      "podiums": 0,
+      "podiums": 1,
       "poles": 0,
       "season_count": 1,
       "seasons": [
@@ -1476,30 +1476,27 @@
       },
       "origin": "Italy",
       "points_by_year": {
-        "2024": 46.0
+        "2024": 59.0
       },
       "wins_by_year": {},
-      "podiums_by_year": {},
+      "podiums_by_year": {
+        "2024": 1
+      },
       "best_result": {
         "year": 2024,
-        "round": 21,
-        "event": "S\u00e3o Paulo Grand Prix",
-        "points": 8.0,
+        "round": 4,
+        "event": "Japanese Grand Prix",
+        "points": 15.0,
         "drivers": [
           {
-            "name": "Yuki Tsunoda",
-            "points": 6.0,
-            "position": 7.0
-          },
-          {
-            "name": "Liam Lawson",
-            "points": 2.0,
-            "position": 9.0
+            "name": "Daniel Ricciardo",
+            "points": 15.0,
+            "position": 3
           }
         ]
       },
       "standings_by_year": {
-        "2024": 8
+        "2024": 7
       }
     },
     "Racing Bulls": {

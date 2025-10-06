@@ -1,12 +1,15 @@
   <div class="card">
     <div class="controls">
-      <div class="field span-3">
+      <!-- Season row on its own -->
+      <div class="field season-field">
         <label for="season">Season</label>
   <select id="season" [(ngModel)]="season" (change)="onSeasonChange()" class="select select--dark border">
+          <option [ngValue]="null">— Select Season —</option>
           <option *ngFor="let y of seasons" [ngValue]="y">{{ y }}</option>
         </select>
       </div>
 
+      <!-- Drivers + action on the next row -->
       <div class="field span-4" *ngIf="driverKeys.length">
         <label for="driver1">Driver 1</label>
   <select id="driver1" [(ngModel)]="driver1" class="select select--dark border">
@@ -26,7 +29,7 @@
       </div>
 
       <div class="field span-3 actions" *ngIf="driverKeys.length">
-        <button (click)="onCompare()">Compare</button>
+        <button class="btn--accent" (click)="onCompare()">Compare</button>
       </div>
     </div>
 
@@ -64,7 +67,7 @@
     </div>
 
     <div *ngIf="loading" class="status">Loading Season...</div>
-    <div *ngIf="errorMsg" class="status error">Error: {{ errorMsg }}</div>
+    <div *ngIf="errorMsg" class="error-message">Error: {{ errorMsg }}</div>
   </div>
 
   <footer class="footer">© {{ currentYear }} GridStats</footer>

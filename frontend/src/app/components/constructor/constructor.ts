@@ -215,9 +215,40 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
         color2
       });
 
-    const config: ChartConfiguration = {
-      type: 'line',
-      data: {
+      // Resolve accent from CSS variables for consistent theming
+      const accentCss = this.isBrowser
+        ? getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#38bdf8'
+        : '#38bdf8';
+      const accentCrosshair = this.hexToRgba(accentCss, 0.40);
+
+      // Lightweight vertical crosshair plugin for the hover index
+      const crosshairPlugin = {
+        id: 'verticalHoverLine',
+        afterDraw(chart: any) {
+          try {
+            const active = typeof chart.getActiveElements === 'function' ? chart.getActiveElements() : [];
+            if (!active || !active.length) return;
+            const xScale = chart.scales?.x;
+            const yScale = chart.scales?.y;
+            if (!xScale || !yScale) return;
+            const index = active[0].index;
+            const x = xScale.getPixelForValue(index);
+            const ctx = chart.ctx;
+            ctx.save();
+            ctx.strokeStyle = accentCrosshair;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x, yScale.top);
+            ctx.lineTo(x, yScale.bottom);
+            ctx.stroke();
+            ctx.restore();
+          } catch {}
+        },
+      } as const;
+
+      const config: ChartConfiguration = {
+        type: 'line',
+        data: {
         labels: years.map(y => y.toString()),
         datasets: [
           {
@@ -228,7 +259,8 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
             tension: 0.3,
             fill: true,
             pointRadius: pointRadius1,
-            pointHoverRadius: years.map(y => c1Standings[y.toString()] === 1 ? 10 : 6),
+            pointHitRadius: 10,
+            pointHoverRadius: years.map(y => c1Standings[y.toString()] === 1 ? 10 : 7),
             pointBackgroundColor: color1,
             pointBorderColor: color1,
             pointBorderWidth: years.map(y => c1Standings[y.toString()] === 1 ? 2 : 1),
@@ -241,7 +273,8 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
             tension: 0.3,
             fill: true,
             pointRadius: pointRadius2,
-            pointHoverRadius: years.map(y => c2Standings[y.toString()] === 1 ? 10 : 6),
+            pointHitRadius: 10,
+            pointHoverRadius: years.map(y => c2Standings[y.toString()] === 1 ? 10 : 7),
             pointBackgroundColor: color2,
             pointBorderColor: color2,
             pointBorderWidth: years.map(y => c2Standings[y.toString()] === 1 ? 2 : 1),
@@ -251,6 +284,8 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false, axis: 'x' },
+        hover: { mode: 'index', intersect: false },
         plugins: {
           title: {
             display: true,
@@ -262,27 +297,31 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
             labels: { color: '#e6edf3' }
           },
           tooltip: {
+            intersect: false,
+            mode: 'index',
+            position: 'nearest',
             callbacks: {
+              title: (items: any[]) => (items?.length ? `Year ${items[0].label}` : ''),
+              label: (ctx: any) => {
+                const label = ctx.dataset?.label || '';
+                const val = ctx.formattedValue ?? ctx.raw;
+                return `${label}: ${val} pts`;
+              },
               afterLabel: (context: any) => {
                 const year = years[context.dataIndex];
                 const yearStr = year.toString();
                 const datasetIndex = context.datasetIndex;
-                const position = datasetIndex === 0 
+                const position = datasetIndex === 0
                   ? c1Standings[yearStr]
                   : c2Standings[yearStr];
-                
                 if (!position) return '';
-                
-                // Convert position to ordinal (1st, 2nd, 3rd, etc.)
                 const getOrdinal = (n: number): string => {
                   const s = ['th', 'st', 'nd', 'rd'];
                   const v = n % 100;
                   return n + (s[(v - 20) % 10] || s[v] || s[0]);
                 };
-                
-                const positionText = getOrdinal(position) + ' place';
-                // Show crown only for 1st place
-                return position === 1 ? `${positionText} 👑` : positionText;
+                const standing = `Standing: ${getOrdinal(position)}`;
+                return position === 1 ? `${standing} 👑` : standing;
               }
             }
           }
@@ -298,10 +337,11 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
             grid: { color: 'rgba(125, 133, 150, 0.1)' }
           }
         }
-      }
-    };
+      },
+      plugins: [crosshairPlugin]
+    } as any;
 
-    const chart = new Chart(this.pointsChart.nativeElement, config);
+    const chart = new Chart(this.pointsChart.nativeElement, config as any);
     this.charts.push(chart);
     console.log('Points chart created successfully');
     } catch (error) {
@@ -352,6 +392,8 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false, axis: 'x' },
+        hover: { mode: 'index', intersect: false },
         animation: false,
         plugins: {
           title: {
@@ -429,6 +471,8 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false, axis: 'x' },
+        hover: { mode: 'index', intersect: false },
         animation: false,
         plugins: {
           title: {

@@ -16,11 +16,12 @@ import {
   TrackRoundRef,
 } from '../../services/api';
 import * as d3 from 'd3';
+import { TrackWorldMapComponent } from './world-map/world-map';
 
 @Component({
   selector: 'app-track',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule],
+  imports: [CommonModule, FormsModule, HttpClientModule, TrackWorldMapComponent],
   templateUrl: './track.html',
   styleUrls: ['./track.css'],
 })
@@ -35,6 +36,10 @@ export class TrackComponent implements OnInit, OnDestroy {
   currentYear = new Date().getFullYear();
 
   tracks: TrackInfo[] = [];
+  private tracksByCountry: Record<string, TrackInfo[]> = {};
+  selectedCountryCode: string | null = null;
+  selectedCountryName: string | null = null;
+  countryTracks: TrackInfo[] = [];
   selectedKey: string | null = null;
   selectedTrack?: TrackInfo;
 
@@ -154,6 +159,14 @@ export class TrackComponent implements OnInit, OnDestroy {
     this.api.getTracks().subscribe({
       next: (items) => {
         this.tracks = (items ?? []).sort((a, b) => a.display_name.localeCompare(b.display_name));
+        // Build quick lookup by ISO A2 country code
+        const by: Record<string, TrackInfo[]> = {};
+        for (const t of this.tracks) {
+          const code = (t.country_code || '').toString().toUpperCase();
+          if (!code) continue;
+          (by[code] ||= []).push(t);
+        }
+        this.tracksByCountry = by;
       },
       error: (err) => {
         this.error = err?.error?.detail ?? err?.message ?? 'Failed to load tracks';
@@ -163,6 +176,45 @@ export class TrackComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     // No subscriptions to clean up; kept for future extensibility.
+  }
+
+  // World map -> country selected
+  onCountrySelected(evt: { code: string; name?: string }): void {
+    // Update selected country and repopulate its track list
+    this.selectedCountryCode = evt?.code ?? null;
+    this.selectedCountryName = evt?.name ?? null;
+    this.countryTracks = this.selectedCountryCode ? (this.tracksByCountry[this.selectedCountryCode] || []) : [];
+
+    // Clear any previously selected track so the country panel appears again
+    // and the user can choose a track for the newly selected country.
+    this.selectedKey = null;
+    this.selectedTrack = undefined;
+    this.selectedVariantSignature = null;
+    this.selectedRoundKey = null;
+    this.selectedRound = undefined;
+    this.trackMap = undefined;
+    this.layoutVariants = [];
+    this.layoutYears = [];
+    this.winners = [];
+    this.error = null;
+  }
+
+  // Select a track from the country list
+  selectTrackFromCountry(track: TrackInfo): void {
+    if (!track) return;
+    this.selectedKey = track.key;
+    this.onSelectTrack();
+    // After a tick, scroll to the detailed map
+    if (this.isBrowser) {
+      setTimeout(() => {
+        const el = document.getElementById('track-details-card');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Clear country selection so the panel collapses
+    this.selectedCountryCode = null;
+    this.selectedCountryName = null;
+    this.countryTracks = [];
+  }, 50);
+    }
   }
 
   get layoutYearsLabel(): string {
@@ -321,7 +373,11 @@ export class TrackComponent implements OnInit, OnDestroy {
       this.trackMap = cached;
       this.layoutVariants = cached.layout_variants ?? [];
       this.layoutYears = cached.layout_years ?? [];
-      this.winners = cached.winners ?? [];
+      this.winners = (Array.isArray(cached.winners) && cached.winners.length)
+        ? cached.winners
+        : (cached as any).winner
+          ? [ (cached as any).winner as RaceWinnerInfo ]
+          : [];
       // Update selected layout signature
       if (cached.layout_signature) {
         this.selectedVariantSignature = cached.layout_signature;
@@ -412,7 +468,11 @@ export class TrackComponent implements OnInit, OnDestroy {
               this.trackMap = fromBundle;
               this.layoutVariants = fromBundle.layout_variants || [];
               this.layoutYears = fromBundle.layout_years || [];
-              this.winners = fromBundle.winners || [];
+              this.winners = (Array.isArray(fromBundle.winners) && fromBundle.winners.length)
+                ? fromBundle.winners
+                : (fromBundle as any).winner
+                  ? [ (fromBundle as any).winner as RaceWinnerInfo ]
+                  : [];
               // Update selected layout signature
               if (fromBundle.layout_signature) {
                 this.selectedVariantSignature = fromBundle.layout_signature;
@@ -460,7 +520,11 @@ export class TrackComponent implements OnInit, OnDestroy {
         this.trackMap = map;
         this.layoutVariants = map.layout_variants ?? [];
         this.layoutYears = map.layout_years ?? [];
-        this.winners = map.winners ?? [];
+        this.winners = (Array.isArray(map.winners) && map.winners.length)
+          ? map.winners
+          : (map as any).winner
+            ? [ (map as any).winner as RaceWinnerInfo ]
+            : [];
         const stillValid = this.selectedVariantSignature
           ? this.layoutVariants.some((variant) => variant.layout_signature === this.selectedVariantSignature)
           : false;

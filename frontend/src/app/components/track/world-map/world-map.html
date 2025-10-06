@@ -1,0 +1,11 @@
+<div class="worldmap-wrapper">
+  <div class="worldmap-canvas" #canvas>
+    <!-- Overlay controls anchored to canvas to avoid layout shifts -->
+    <div class="wm-controls">
+      <button class="wm-btn" type="button" (click)="resetMap()" title="Reset zoom and selection">Reset</button>
+    </div>
+    <svg #svg class="worldmap-svg" preserveAspectRatio="xMidYMid meet"></svg>
+    <div #tooltip class="worldmap-tooltip" style="opacity:0"></div>
+  </div>
+  <div class="worldmap-hint">Click a highlighted country to view its tracks</div>
+</div>

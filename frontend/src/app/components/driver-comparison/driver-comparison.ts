@@ -236,11 +236,18 @@ export class DriverComparison implements OnDestroy {
   }
 
   onCompare(): void {
-    if (!this.driver1 || !this.driver2) return;
-    if (this.driver1 === this.driver2) {
-      alert('Please choose two different drivers.');
+    if (!this.driver1 || !this.driver2) {
+      this.errorMsg = 'Please select both drivers';
+      this.compared = false;
       return;
     }
+    if (this.driver1 === this.driver2) {
+      this.errorMsg = 'Please select different drivers';
+      this.compared = false;
+      return;
+    }
+    // Clear any previous error
+    this.errorMsg = null;
     const d1 = this.driverMap[this.driver1];
     const d2 = this.driverMap[this.driver2];
     if (!d1 || !d2) return;

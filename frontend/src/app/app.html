@@ -12,7 +12,13 @@
 
   <main class="page">
     <div class="container">
-      <!-- Hier erscheinen deine Seiten -->
+      <!-- Data availability notice -->
+      <div *ngIf="showDataNotice" class="data-notice">
+        <span class="notice-text">Info: Data available from 2018 season onwards</span>
+        <button class="close-btn" (click)="closeNotice()" aria-label="Close notice">×</button>
+      </div>
+      
+      <!-- Routed pages -->
       <router-outlet></router-outlet>
     </div>
   </main>
@@ -23,3 +29,4 @@
   </div>
 </footer>
 </div>
+

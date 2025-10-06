@@ -1,7 +1,7 @@
 ﻿<div class="card">
   <div class="controls">
     <div class="field span-5">
-      <label for="constructor1">Constructor 1</label>
+      <label for="constructor1" class="accent-color">Constructor 1</label>
       <select id="constructor1" [(ngModel)]="constructor1" class="select select--dark border" [disabled]="loading">
         <option [ngValue]="null">— Select Constructor 1 —</option>
         <option *ngFor="let key of constructorKeys" [ngValue]="key">{{ constructorMap[key].name }}</option>
@@ -9,7 +9,7 @@
     </div>
     
     <div class="field span-5">
-      <label for="constructor2">Constructor 2</label>
+      <label for="constructor2" class="accent-color">Constructor 2</label>
       <select id="constructor2" [(ngModel)]="constructor2" class="select select--dark border" [disabled]="loading">
         <option [ngValue]="null">— Select Constructor 2 —</option>
         <option *ngFor="let key of constructorKeys" [ngValue]="key">{{ constructorMap[key].name }}</option>
@@ -18,7 +18,7 @@
     
     <div class="field span-2">
       <label>&nbsp;</label>
-      <button class="btn btn--primary" (click)="onCompare()" [disabled]="!constructor1 || !constructor2 || loading">Compare</button>
+      <button class="btn--accent" (click)="onCompare()" [disabled]="!constructor1 || !constructor2 || loading">Compare</button>
     </div>
   </div>
 
@@ -97,7 +97,7 @@
     </div>
 
     <div class="charts-section">
-      <h2>Performance Over Time</h2>
+      <h2>Performance over time</h2>
       <div class="chart-container"><canvas #pointsChart></canvas></div>
       <div class="chart-grid">
         <div class="chart-container"><canvas #winsChart></canvas></div>
@@ -154,4 +154,4 @@
   </div>
 </div>
 
-<footer class="footer"> {{ currentYear }} GridStats</footer>
+  <footer class="footer">© {{ currentYear }} GridStats</footer>
