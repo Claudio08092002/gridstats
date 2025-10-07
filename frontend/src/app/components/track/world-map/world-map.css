@@ -138,7 +138,7 @@
 
 /* Zoom affordance */
 .worldmap-canvas:after {
-  content: 'Scroll to zoom • Drag to pan';
+  content: 'Scroll to zoom ï¿½ Drag to pan';
   position: absolute;
   bottom: 10px;
   left: 16px;
