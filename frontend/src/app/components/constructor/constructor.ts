@@ -45,7 +45,9 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
   years: number[] = [];
 
   ngOnInit(): void {
-    this.loadConstructors();
+    if (this.isBrowser) {
+      this.loadConstructors();
+    }
   }
 
   ngAfterViewInit(): void {

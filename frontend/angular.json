@@ -50,6 +50,7 @@
                   "maximumError": "12kB"
                 }
               ],
+              "prerender": false,
               "outputHashing": "all",
               "fileReplacements": [
                 {
