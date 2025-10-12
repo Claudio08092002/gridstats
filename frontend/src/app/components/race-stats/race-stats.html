@@ -1,0 +1,49 @@
+<div class="race-stats">
+  <header class="header">
+    <h2>{{ data?.event?.name || 'Race Stats' }}</h2>
+    <div class="sub">Season {{ year }} • Round {{ round }}<span *ngIf="data?.event?.location"> • {{ data?.event?.location }}</span><span *ngIf="data?.event?.country">, {{ data?.event?.country }}</span></div>
+  </header>
+
+  <section class="grid">
+    <div class="card">
+      <h3>Overview</h3>
+      <div class="meta">
+        <div><span class="label">Total Laps</span><span class="value">{{ data?.meta?.total_laps || '—' }}</span></div>
+        <div><span class="label">Duration</span><span class="value">{{ formatDuration(data?.meta?.duration_ms) }}</span></div>
+        <div><span class="label">Retirements</span><span class="value">{{ data?.meta?.retirements || 0 }}</span></div>
+        <div *ngIf="data?.meta?.fastest_lap as fl"><span class="label">Fastest Lap</span><span class="value">{{ fl?.driver }} {{ fl?.lap_time_ms ? '(' + formatLap(fl?.lap_time_ms) + ')' : '' }}</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Final Classification</h3>
+      <div class="table">
+        <div class="t-head">
+          <div>#</div><div>Driver</div><div>Team</div><div>Grid</div><div>ΔGrid</div><div>Status</div><div>Pts</div>
+        </div>
+        <div class="t-row clickable" *ngFor="let r of data?.classification" (click)="goDriver(r)">
+          <div>{{ r.position || '—' }}</div>
+          <div class="driver"><span class="dot" [style.background]="r.team_color || '#777'"></span>{{ r.driver }}</div>
+          <div>{{ r.team }}</div>
+          <div>{{ r.grid ?? '—' }}</div>
+          <div [class.pos]="(r.grid_delta||0) > 0" [class.neg]="(r.grid_delta||0) < 0">{{ r.grid_delta ?? '—' }}</div>
+          <div>{{ r.status_simple || simplifyStatus(r) }}</div>
+          <div>{{ r.points | number: '1.0-0' }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Position by Lap</h3>
+      <div id="pos-chart" class="chart"></div>
+    </div>
+
+    <div class="card">
+      <h3>Team Pace Boxplot</h3>
+      <div id="pace-boxplot" class="chart"></div>
+    </div>
+  </section>
+
+  <div class="loading" *ngIf="loading">Loading…</div>
+  <div class="error" *ngIf="!loading && error">{{ error }}</div>
+</div>

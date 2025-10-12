@@ -102,9 +102,11 @@
   <div class="winner-list" *ngIf="displayWinners.length">
     <h3>Recent winners</h3>
     <ul>
-      <li *ngFor="let winner of displayWinners" 
+      <li *ngFor="let winner of displayWinners"
+          (click)="onWinnerClick(winner)"
           [style.background-color]="getWinnerBackgroundColor(winner.team_color)"
-          [style.border-left-color]="winner.team_color || 'rgba(255, 255, 255, 0.08)'">
+          [style.border-left-color]="winner.team_color || 'rgba(255, 255, 255, 0.08)'"
+          title="Open race stats">
         <span class="year">{{ winner.year }}</span>
         <div class="winner-info">
           <span class="name">{{ winner.driver || 'Unknown driver' }}</span>

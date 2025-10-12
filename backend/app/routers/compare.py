@@ -13,7 +13,7 @@ from app.services.cache_utils import load_season as cache_load, save_season as c
 from app.services.f1_utils import load_results_strict
 
 router = APIRouter(prefix="/f1", tags=["fastf1"])
-SCHEMA_VERSION = 11
+SCHEMA_VERSION = 13
 
 _DEFAULT_FASTF1_CACHE = "C:/Users/claud/.fastf1_cache" if os.name == "nt" else "/data/fastf1_cache"
 _cache_dir = os.getenv("FASTF1_CACHE", _DEFAULT_FASTF1_CACHE)
@@ -27,6 +27,28 @@ else:
 
 _FINISH_KEYWORDS = {"finished", "finish", "lapped"}
 _NON_DNF_EXCLUDE = {"disqualified", "did not start", "excluded"}
+
+# Team color fallbacks by common/historic names
+TEAM_COLOR_FALLBACK = {
+    "MERCEDES": "#00D2BE",
+    "FERRARI": "#E80020",
+    "RED BULL": "#3671C6",
+    "RED BULL RACING": "#3671C6",
+    "MCLAREN": "#FF8000",
+    "ALPINE": "#0090FF",
+    "ASTON MARTIN": "#00665F",
+    "WILLIAMS": "#005AFF",
+    "HAAS": "#FFFFFF",
+    # 2024/2025 naming
+    "RB": "#6692FF",
+    "RACING BULLS": "#6692FF",
+    "KICK SAUBER": "#00E100",
+    "SAUBER": "#00E100",
+    # Historic/alternate
+    "ALPHATAURI": "#469BFF",
+    "ALPHA TAURI": "#469BFF",
+    "ALFA ROMEO": "#9B0000",
+}
 
 
 def _ensure_abbreviation(df: pd.DataFrame) -> pd.DataFrame:
@@ -56,6 +78,41 @@ def _normalize_hex_color(value: Any) -> str | None:
     if len(text) != 7:
         return None
     return text.upper()
+
+
+def _fallback_team_color(team: Any, current: Any = None) -> str | None:
+    # Prefer provided team color if valid
+    col = _normalize_hex_color(current)
+    if col:
+        return col
+    name = str(team or '').upper()
+    if not name:
+        return None
+    if 'MERCEDES' in name:
+        return TEAM_COLOR_FALLBACK.get('MERCEDES')
+    if 'FERRARI' in name:
+        return TEAM_COLOR_FALLBACK.get('FERRARI')
+    if 'RED BULL' in name:
+        return TEAM_COLOR_FALLBACK.get('RED BULL')
+    if 'MCLAREN' in name:
+        return TEAM_COLOR_FALLBACK.get('MCLAREN')
+    if 'ALPINE' in name or 'RENAULT' in name:
+        return TEAM_COLOR_FALLBACK.get('ALPINE')
+    if 'ASTON MARTIN' in name or 'RACING POINT' in name:
+        return TEAM_COLOR_FALLBACK.get('ASTON MARTIN')
+    if 'WILLIAMS' in name:
+        return TEAM_COLOR_FALLBACK.get('WILLIAMS')
+    if 'HAAS' in name:
+        return TEAM_COLOR_FALLBACK.get('HAAS')
+    if 'ALPHATAURI' in name or 'ALPHA TAURI' in name:
+        return TEAM_COLOR_FALLBACK.get('ALPHATAURI')
+    if 'ALFA ROMEO' in name:
+        return TEAM_COLOR_FALLBACK.get('ALFA ROMEO')
+    if 'SAUBER' in name or 'KICK SAUBER' in name or 'STAKE' in name:
+        return TEAM_COLOR_FALLBACK.get('KICK SAUBER')
+    if name == 'RB' or ' RACING BULLS' in name:
+        return TEAM_COLOR_FALLBACK.get('RB')
+    return TEAM_COLOR_FALLBACK.get(name)
 
 
 def _fallback_grid_positions(year: int, rnd: int) -> Dict[str, int]:
@@ -321,24 +378,38 @@ def _build_season_payload(year: int) -> Dict[str, Any]:
     if schedule is None or schedule.empty:
         raise HTTPException(status_code=404, detail="Season schedule not available")
 
-    schedule = schedule.copy()
-    if "RoundNumber" not in schedule.columns:
-        raise HTTPException(status_code=500, detail="Schedule data missing round information")
-
-    schedule["RoundNumber"] = pd.to_numeric(schedule["RoundNumber"], errors="coerce")
-    schedule = schedule.dropna(subset=["RoundNumber"])
-    schedule = schedule.sort_values("RoundNumber")
+    # Build robust list of rounds: prefer schedule, otherwise probe rounds via results
+    rounds: list[int] = []
+    if schedule is not None and not schedule.empty:
+        sc = schedule.copy()
+        if "RoundNumber" in sc.columns:
+            sc["RoundNumber"] = pd.to_numeric(sc["RoundNumber"], errors="coerce")
+            sc = sc.dropna(subset=["RoundNumber"]).sort_values("RoundNumber")
+            rounds = [int(v) for v in sc["RoundNumber"].unique().tolist() if pd.notna(v)]
+    if not rounds:
+        # Fallback: probe rounds 1..35 using our strict loader
+        misses = 0
+        for rnd in range(1, 36):
+            try:
+                _, test_df = load_results_strict(year, rnd)
+                if test_df is not None and not test_df.empty:
+                    rounds.append(rnd)
+                    misses = 0
+                else:
+                    misses += 1
+            except Exception:
+                misses += 1
+            if misses >= 5 and rounds:
+                break
+        if not rounds:
+            raise HTTPException(status_code=404, detail="Season schedule not available")
 
     results_by_driver: Dict[str, Dict[str, Any]] = {}
     pole_counts: defaultdict[str, int] = defaultdict(int)
     pole_rounds: defaultdict[str, list[int]] = defaultdict(list)
     sprint_rounds: set[int] = set()
 
-    for _, event in schedule.iterrows():
-        rnd_raw = event.get("RoundNumber")
-        if pd.isna(rnd_raw):
-            continue
-        rnd = int(rnd_raw)
+    for rnd in rounds:
         try:
             _, df = load_results_strict(year, rnd)
         except Exception:
@@ -351,26 +422,28 @@ def _build_season_payload(year: int) -> Dict[str, Any]:
         df["Position"] = pd.to_numeric(df.get("Position"), errors="coerce")
         df["GridPosition"] = pd.to_numeric(df.get("GridPosition"), errors="coerce")
 
+        # Qualifying-based pole detection (official definition)
         fallback_grid = _fallback_grid_positions(year, rnd)
+        if fallback_grid:
+            # Identify driver with qualifying position P1 for this round
+            for code_q, pos_q in fallback_grid.items():
+                try:
+                    if int(pos_q) == 1:
+                        pole_counts[str(code_q).upper()] += 1
+                        pole_rounds[str(code_q).upper()].append(rnd)
+                        break
+                except Exception:
+                    continue
+
+        # Still use fallback_grid to fill missing GridPosition values for other stats
         if fallback_grid:
             mask = df["GridPosition"].isna()
             if mask.any():
                 df.loc[mask, "GridPosition"] = df.loc[mask, "Abbreviation"].map(lambda v: fallback_grid.get(str(v).upper()))
 
-        pole_rows = df[df["GridPosition"] == 1]
-        if not pole_rows.empty:
-            pole_code = str(pole_rows.iloc[0].get("Abbreviation") or "").upper()
-            if pole_code:
-                pole_counts[pole_code] += 1
-                pole_rounds[pole_code].append(rnd)
-
+        # Load status lookup for DNF calculation
         extended_grid = _load_extended_grid_positions(year, rnd)
         status_lookup = _load_ergast_status(year, rnd)
-        if extended_grid:
-            for code_ext, pos_ext in extended_grid.items():
-                if pos_ext == 1:
-                    pole_counts[code_ext] += 1
-                    pole_rounds[code_ext].append(rnd)
 
         for _, row in df.iterrows():
             code_val = row.get("Abbreviation")
@@ -389,8 +462,7 @@ def _build_season_payload(year: int) -> Dict[str, Any]:
             if team_name:
                 entry["team"] = str(team_name)
             color = _normalize_hex_color(row.get("TeamColor"))
-            if color:
-                entry["team_color"] = color
+            entry["team_color"] = color or _fallback_team_color(entry["team"], None)
 
             grid_val = row.get("GridPosition")
             if grid_val is not None and not pd.isna(grid_val):

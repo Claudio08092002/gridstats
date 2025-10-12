@@ -17,6 +17,7 @@ import {
 } from '../../services/api';
 import * as d3 from 'd3';
 import { TrackWorldMapComponent } from './world-map/world-map';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-track',
@@ -29,6 +30,7 @@ export class TrackComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
+  private router = inject(Router);
 
   // Inject the HttpClient to allow loading cached files from the assets
   private http = inject(HttpClient);
@@ -284,6 +286,13 @@ export class TrackComponent implements OnInit, OnDestroy {
     }
     const normalized = code.toLowerCase();
     return ['fi', `fi-${normalized}`];
+  }
+
+  onWinnerClick(winner: RaceWinnerInfo): void {
+    if (!winner || !Number.isFinite(winner.year) || !Number.isFinite(winner.round)) {
+      return;
+    }
+    this.router.navigate(['/race', winner.year, winner.round]);
   }
 
   onSelectTrack(): void {

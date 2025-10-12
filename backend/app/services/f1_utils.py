@@ -2,6 +2,7 @@ from typing import Tuple
 import pandas as pd
 import os
 import fastf1
+from fastf1.core import DataNotLoadedError
 
 def get_session_prefer_fastf1(year: int, round_number: int, code: str):
     """Return a session preferring fastf1 backend, falling back to ergast.
@@ -236,7 +237,14 @@ def load_results_strict(year: int, round_number: int) -> Tuple[str, pd.DataFrame
     # 3) Notlösung: Laps ableiten
     ses3 = get_session_prefer_fastf1(year, round_number, "R")
     ses3.load(laps=True, telemetry=False, weather=False, messages=False)
-    laps = ses3.laps
+    try:
+        laps = ses3.laps
+    except DataNotLoadedError:
+        try:
+            ses3.load(laps=True, telemetry=False, weather=False, messages=False)
+            laps = ses3.laps
+        except Exception:
+            laps = None
     if laps is None or laps.empty:
         return "derived_empty", pd.DataFrame(columns=["Abbreviation","Position","Points"])
 

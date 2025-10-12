@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import fastf1
+from fastf1.core import DataNotLoadedError
 from fastf1.ergast import Ergast, interface as ergast_interface
 import numpy as np
 import pandas as pd
@@ -546,7 +547,14 @@ def _build_from_session(session) -> Optional[Dict[str, Any]]:
                 session.load(laps=True, telemetry=True, weather=False, messages=False)
             except Exception:
                 return None
-            laps = session.laps
+            try:
+                laps = session.laps
+            except DataNotLoadedError:
+                try:
+                    session.load(laps=True, telemetry=True, weather=False, messages=False)
+                    laps = session.laps
+                except Exception:
+                    laps = None
             if laps is None or laps.empty:
                 return None
             try:
@@ -879,11 +887,27 @@ def _winner_from_ergast(year: int, round_number: int) -> Optional[Dict[str, Any]
     season_path = _SEASON_CACHE_ROOT / f"season_{year}.json"
     season_payload = _read_json(season_path)
     driver_index = season_payload.get("drivers") if isinstance(season_payload, dict) and isinstance(season_payload.get("drivers"), dict) else {}
+    code_token = (code or "").strip().upper()
+    if len(code_token) != 3 and isinstance(driver_index, dict) and driver_index:
+        # Attempt to infer 3-letter code from surname or id
+        guess = None
+        surname = (family or "").strip().lower() or (driver.split(" ")[-1].lower() if driver else "")
+        for k, v in driver_index.items():
+            if not isinstance(v, dict):
+                continue
+            full = _safe_str(v.get("full_name")) or _safe_str(v.get("name"))
+            if not full:
+                continue
+            if surname and surname in full.lower():
+                guess = k
+                break
+        if guess and len(guess) == 3:
+            code_token = guess
     
     # Get team color from driver index
     team_color = None
-    if code and isinstance(driver_index, dict):
-        driver_data = driver_index.get(code)
+    if code_token and isinstance(driver_index, dict):
+        driver_data = driver_index.get(code_token)
         if isinstance(driver_data, dict):
             team_color = driver_data.get("team_color")
     
@@ -894,9 +918,9 @@ def _winner_from_ergast(year: int, round_number: int) -> Optional[Dict[str, Any]
     return {
         "year": int(row.get("season", year) or year),
         "round": int(row.get("round", round_number) or round_number),
-        "driver": _resolve_driver_full_name(driver or code, code, driver_index),
+        "driver": _resolve_driver_full_name(driver or code_token, code_token, driver_index),
         "team": team,
-        "code": code,
+        "code": code_token,
         "event": event_name,
         "team_color": team_color,
     }

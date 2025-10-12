@@ -1,0 +1,42 @@
+<div class="driver-race">
+  <header class="header">
+    <h2>{{ driverCode }} – Race Details</h2>
+    <div class="sub">Season {{ year }} • Round {{ round }}</div>
+  </header>
+
+  <section class="grid">
+    <div class="card">
+      <h3>Overview</h3>
+      <div class="meta">
+        <div><span class="label">Team</span><span class="value" [style.color]="data?.team_color || '#e6edf3'">{{ data?.team || '—' }}</span></div>
+        <div><span class="label">Qualifying Position</span><span class="value">{{ data?.grid ?? '—' }}</span></div>
+        <div><span class="label">Finish</span><span class="value">{{ data?.finish ?? '—' }}</span></div>
+        <div><span class="label">Status</span><span class="value">{{ data?.status || '—' }}</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Pace (Lap Time)</h3>
+      <div id="pace-chart" class="chart"></div>
+      <div id="pace-tooltip" class="tooltip" style="display:none"></div>
+      <div class="note">Box laps (pit in/out) may be hidden; gaps indicate box laps.</div>
+    </div>
+
+    <div class="card">
+      <h3>Strategy (Stints)</h3>
+      <div id="stint-chart" class="chart small"></div>
+      <div id="stint-tooltip" class="tooltip" style="display:none"></div>
+    </div>
+
+    <div class="card">
+      <h3>Position By Lap</h3>
+      <div id="pos-mini-chart" class="chart small"></div>
+      <div id="pos-tooltip" class="tooltip" style="display:none"></div>
+    </div>
+
+    <!-- Pit stops table removed; details are shown via hover tooltip on stints. -->
+  </section>
+
+  <div class="loading" *ngIf="loading">Loading…</div>
+  <div class="error" *ngIf="!loading && error">{{ error }}</div>
+</div>
