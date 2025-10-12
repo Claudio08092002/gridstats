@@ -11,9 +11,9 @@ from app.routers import compare, track, constructor, race, race_driver, maintena
 
 ALLOWED_ORIGINS = [
     "http://localhost:4200",
-    "https://claudio.stefanhohl.ch",
+    "https://gridstats.giacal.ch",
 ]
-ALLOWED_ORIGIN_REGEX = r"^https://(?:.+\.)?stefanhohl\.ch$"
+ALLOWED_ORIGIN_REGEX = r"^https://(?:.+\.)?giacal\.ch$"
 
 app = FastAPI()
 app.add_middleware(

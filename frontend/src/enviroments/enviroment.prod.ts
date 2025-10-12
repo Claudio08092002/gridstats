@@ -1,5 +1,5 @@
 //prod
 export const environment = {
   production: true,
-  apiBase: 'https://gridstats-api.stefanhohl.ch/api'
+  apiBase: 'https://gridstats-api.giacal.ch/api'
 };
