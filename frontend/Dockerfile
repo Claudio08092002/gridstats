@@ -6,7 +6,7 @@ RUN npm ci
 COPY frontend/ ./
 # Copy tracks_cache from backend to frontend assets before build
 COPY backend/app/tracks_cache ./public/assets/tracks_cache
-ARG ANGULAR_PROJECT=frontend
+ARG ANGULAR_PROJECT=gridstats
 RUN npm run build -- --configuration production \
  && mkdir -p /app/build \
  && if [ -d "/app/dist/${ANGULAR_PROJECT}/browser" ]; then \
