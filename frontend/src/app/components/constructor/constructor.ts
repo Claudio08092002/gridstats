@@ -2,9 +2,7 @@ import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef, inj
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService, ConstructorSummary, ConstructorListResponse, ConstructorComparisonResponse } from '../../services/api';
-import { Chart, registerables, ChartConfiguration } from 'chart.js';
-
-Chart.register(...registerables);
+import type { ChartConfiguration } from 'chart.js';
 
 @Component({
   selector: 'app-constructor',
@@ -24,7 +22,8 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
   private cdr = inject(ChangeDetectorRef);
   private isBrowser = isPlatformBrowser(this.platformId);
   
-  private charts: Chart[] = [];
+  private chartJs: any | null = null;
+  private charts: any[] = [];
 
   currentYear = new Date().getFullYear();
   loading = false;
@@ -101,8 +100,10 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onCompare(): void {
-    let cardDiv = document.querySelector('.card');
-    cardDiv?.setAttribute('style', 'padding: 2rem;');
+    if (this.isBrowser) {
+      const cardDiv = document.querySelector('.card');
+      cardDiv?.setAttribute('style', 'padding: 2rem;');
+    }
     if (!this.constructor1 || !this.constructor2) {
       this.errorMsg = 'Please select both constructors';
       return;
@@ -128,10 +129,10 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
         this.cdr.markForCheck();
 
         // Wait longer for view to fully render
-        setTimeout(() => {
+        setTimeout(async () => {
           console.log('Creating charts...');
           try {
-            this.createCharts();
+            await this.createCharts();
             this.cdr.markForCheck();
           } catch (error) {
             console.error('Error creating charts:', error);
@@ -149,11 +150,20 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
-  private createCharts(): void {
+  private async ensureChartJs(): Promise<void> {
+    if (this.chartJs || !this.isBrowser) return;
+    const mod = await import('chart.js');
+    mod.Chart.register(...mod.registerables);
+    this.chartJs = mod;
+  }
+
+  private async createCharts(): Promise<void> {
     if (!this.isBrowser || !this.constructor1Data || !this.constructor2Data) {
       console.warn('Cannot create charts: missing browser or data');
       return;
     }
+
+    await this.ensureChartJs();
 
     console.log('Canvas elements:', {
       points: !!this.pointsChart?.nativeElement,
@@ -168,12 +178,12 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
       c2PointsByYear: this.constructor2Data?.points_by_year
     });
 
-    this.createPointsChart();
-    this.createWinsChart();
-    this.createPodiumsChart();
+    await this.createPointsChart();
+    await this.createWinsChart();
+    await this.createPodiumsChart();
   }
 
-  private createPointsChart(): void {
+  private async createPointsChart(): Promise<void> {
     if (!this.pointsChart?.nativeElement) {
       console.warn('Points chart canvas not found');
       return;
@@ -181,6 +191,7 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
     console.log('Creating points chart...');
 
     try {
+      await this.ensureChartJs();
       const c1 = this.constructor1Data!;
       const c2 = this.constructor2Data!;
 
@@ -341,7 +352,7 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
       plugins: [crosshairPlugin]
     } as any;
 
-    const chart = new Chart(this.pointsChart.nativeElement, config as any);
+    const chart = new this.chartJs.Chart(this.pointsChart.nativeElement, config as any);
     this.charts.push(chart);
     console.log('Points chart created successfully');
     } catch (error) {
@@ -349,7 +360,7 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  private createWinsChart(): void {
+  private async createWinsChart(): Promise<void> {
     if (!this.winsChart?.nativeElement) {
       console.warn('Wins chart canvas not found');
       return;
@@ -357,6 +368,7 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
     console.log('Creating wins chart...');
 
     try {
+      await this.ensureChartJs();
       const c1 = this.constructor1Data!;
       const c2 = this.constructor2Data!;
 
@@ -420,7 +432,7 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
       }
     };
 
-    const chart = new Chart(this.winsChart.nativeElement, config);
+    const chart = new this.chartJs.Chart(this.winsChart.nativeElement, config);
     this.charts.push(chart);
     console.log('Wins chart created successfully');
     } catch (error) {
@@ -428,7 +440,7 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  private createPodiumsChart(): void {
+  private async createPodiumsChart(): Promise<void> {
     if (!this.podiumsChart?.nativeElement) {
       console.warn('Podiums chart canvas not found');
       return;
@@ -436,6 +448,7 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
     console.log('Creating podiums chart...');
 
     try {
+      await this.ensureChartJs();
       const c1 = this.constructor1Data!;
       const c2 = this.constructor2Data!;
 
@@ -499,7 +512,7 @@ export class ConstructorComponent implements OnInit, OnDestroy, AfterViewInit {
       }
     };
 
-    const chart = new Chart(this.podiumsChart.nativeElement, config);
+    const chart = new this.chartJs.Chart(this.podiumsChart.nativeElement, config);
     this.charts.push(chart);
     console.log('Podiums chart created successfully');
     } catch (error) {

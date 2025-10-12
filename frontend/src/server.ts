@@ -47,6 +47,13 @@ app.use((req, res, next) => {
     .catch(next);
 });
 
+// Log SSR errors with stack traces instead of [object Object]
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  // eslint-disable-next-line no-console
+  console.error('SSR error:', err?.stack || err);
+  res.status(500).send('SSR error');
+});
+
 /**
  * Start the server if this module is the main entry point.
  * The server listens on the port defined by the `PORT` environment variable, or defaults to 4000.
